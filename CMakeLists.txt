@@ -28,18 +28,18 @@ set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--add-needed")
 #SOURCEs
 set(${NAME}_srcs src/LambdaCamera.cpp  
 	src/LambdaDetInfoCtrlObj.cpp  src/LambdaInterface.cpp 
-	src/LambdaSyncCtrlObj.cpp src/LambdaBinCtrlObj.cpp)
+	src/LambdaSyncCtrlObj.cpp)
 
 add_library(lima${NAME} SHARED ${${NAME}_srcs})
 
 #INCLUDEs
 target_include_directories(lima${NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
-#target_include_directories(lima${NAME} PUBLIC "/opt/blabla/include")
+target_include_directories(lima${NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/sdk/include")
 
 #LIBRARIES
-find_library(LIB_FOR_LAMBDA blabla /opt/blabla/lib64)
+find_library(LIB_FOR_LAMBDA lambda ${CMAKE_CURRENT_SOURCE_DIR}/sdk/bin)
 if (("${LIB_FOR_LAMBDA}" STREQUAL "LIB_FOR_LAMBDA-NOTFOUND"))
-  message(FATAL_ERROR "${NAME} : libblabla not found, please update your path using cmake-gui")
+  message(FATAL_ERROR "${NAME} : liblambda not found, please update your path using cmake-gui")
 endif()
 
 target_link_libraries(lima${NAME} limacore)
