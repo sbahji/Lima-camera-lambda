@@ -294,6 +294,7 @@ namespace DetLambdaNS
         LambdaConfigReader* m_objConfigReader;
         
         string m_strCurrentModuleName;	
+        string m_strSystemType;
         bool m_bAcquisitionStart;
         bool m_bAcquisitionStop;
             
@@ -340,6 +341,7 @@ namespace DetLambdaNS
         int32* m_ptrnLiveData;
         int32 m_lLiveFrameNo;
         int16 m_shLiveErrCode;
+	bool m_hasFirstImageArrived;
         
         bool m_bRunning;
         bool m_bSysExit;

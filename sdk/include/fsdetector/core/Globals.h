@@ -49,6 +49,33 @@
 #include <vector>
 #include "Version.h"
 
+/* WARNING: The following assumes to complement integer arithmetic. */
+
+#if !defined(__cplusplus) || !defined(__STDC_LIMIT_MACROS)
+
+#ifndef __INT64_C
+	#define __INT64_C(c) (c ## LL)
+	#define __UINT64_C(c) (c ## ULL)
+#endif
+
+#  define INT8_MIN			(-128)
+#  define INT16_MIN		(-32768)
+#  define INT32_MIN		(-2147483648)
+#  define INT64_MIN		(-__INT64_C(9223372036854775807)-1)
+
+#  define INT8_MAX		(127)
+#  define INT16_MAX		(32767)
+#  define INT32_MAX		(2147483647)
+#  define INT64_MAX		(__INT64_C(9223372036854775807))
+
+#  define UINT8_MAX		(255)
+#  define UINT16_MAX		(65535)
+#  define UINT32_MAX		(4294967295U)
+#  define UINT64_MAX		(__UINT64_C(18446744073709551615))
+
+#endif
+
+
 namespace FSDetCoreNS
 {
     /* define fixed width integer type */
@@ -60,15 +87,15 @@ namespace FSDetCoreNS
     typedef uint16_t uint16;
     typedef uint32_t uint32;
     typedef uint64_t uint64;
-    
+
     typedef size_t szt;
     typedef ssize_t sszt;
     typedef unsigned char uchar;
-    
+
     const int8 int8min = INT8_MIN;
     const int8 int8max = INT8_MAX;
     const uint8 uint8max = UINT8_MAX;
-    
+
     const int16 int16min = INT16_MIN;
     const int16 int16max = INT16_MAX;
     const uint16 uint16max = UINT16_MAX;
@@ -80,8 +107,8 @@ namespace FSDetCoreNS
     const int64 int64min = INT64_MIN;
     const int64 int64max = INT64_MAX;
     const uint64 uint64max = UINT64_MAX;
-   
-    
+
+
     /// udp package size
     const uint16 UDP_PACKET_SIZE_NORMAL = 8934;
 
@@ -123,7 +150,9 @@ namespace FSDetCoreNS
      * mainly used for indicating the log level
      */
     enum Enum_log_level {
-        DEBUG, /**< enum value 0 */
+        TRACE,
+        DEBUG,
+        INFO,
         WARNING,
         ERROR
     };
@@ -148,32 +177,15 @@ namespace FSDetCoreNS
                             * done. */
     };
 
+    void InitLogLevel(Enum_log_level level);
     /**
      * @brief output debug information
      */
-    static void OUTPUT(string strFunc, Enum_log_level ELevel, string StrMsg)
-    {
-        /// debug information
-        #ifdef LDEBUG
-        cout << "==DEBUG==" << strFunc << "(): " << ELevel << " " << StrMsg << endl;
-        #endif
-    }
+    void OUTPUT(string strFunc, Enum_log_level ELevel, string StrMsg);
 
-    static void OUTPUT2(string strFunc)
-    {
-        /// trace information
-        #ifdef LTRACE
-        cout << "==TRACE==" << strFunc << "(): starts..." << endl;
-        #endif
-    }
+    void OUTPUT2(string strFunc);
 
-    static void OUTPUT3(string strMsg)
-    {
-        /// information
-        #ifdef LINFO
-        cout << "==INFO==" << strMsg << endl;
-        #endif
-    }
+    void OUTPUT3(string strMsg);
 
     /**
      * @brief marco definition for basic system info printout

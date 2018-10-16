@@ -4,5 +4,5 @@
 
 namespace FSDetCoreNS
 {
-    const std::string FSDETCORE_VERSION="0.8";
+    const std::string FSDETCORE_VERSION="0.9";
 }

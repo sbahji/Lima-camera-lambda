@@ -227,22 +227,22 @@ namespace FSDetCoreNS
     {
         boost::unique_lock<boost::mutex> lock(m_bstMtx);
         if(m_vAcquiredPacketNumbers[m_lEndPos] != 133)
-        {/*
+        {
             string strTmp2 = "Raw image received incomplete: taskid:||"
-                + to_string(m_lLastUnfinishedFrame)
-                + "||" + to_string(m_lTotalReceivedFrames)
-                + "||" + to_string(m_vAcquiredPacketNumbers[m_lEndPos])
+                + to_string((long long int)m_lLastUnfinishedFrame)
+                + "||" + to_string((long long int)m_lTotalReceivedFrames)
+                + "||" + to_string((long long int)m_vAcquiredPacketNumbers[m_lEndPos])
                 + "||";
                 
             for(szt j = 0; j < m_vTaskMonitor.size(); j++)
             {
-                strTmp2 += to_string(j);
+                strTmp2 += to_string((long long int)j);
                 strTmp2 += ":";
-                strTmp2 += to_string(m_vTaskMonitor[j]);
+                strTmp2 += to_string((long long int)m_vTaskMonitor[j]);
                 strTmp2 += "||";
             }
             strTmp2 += "\n";
-            vGlobalDebugInfo.push_back(strTmp2);*/
+            vGlobalDebugInfo.push_back(strTmp2);
         }
             
         m_vAcquiredPacketNumbers[m_lEndPos] = 0;
@@ -420,14 +420,14 @@ namespace FSDetCoreNS
     
     template <class T>
     bool MemPool<T>::SetPacket(T* objPacket, szt nPos, szt nLength,
-                            int32 lImgNo, int16 shErrCode,int32 nTaskID, uint16 shPacketNo)
+                               int32 lImgNo, int16 shErrCode,int32 nTaskID, uint16 shPacketNo)
     {
         int32 lPos = GetPosByFrameNo(lImgNo);
 
         copy(objPacket + UDP_EXTRA_BYTES, objPacket + nLength, m_vImgBuff[lPos] + nPos);
 
         boost::unique_lock<boost::mutex> lock(m_bstMtx);
-
+        
         if(m_bFrameStart) {
             m_lStartPos = lPos;
             m_lEndPos = lPos;
@@ -538,7 +538,8 @@ namespace FSDetCoreNS
     {
         // clear the memory
         // Loop through image buffer and deallocate
-        for(szt i = 0; i < m_vImgBuff.size(); i++) {
+        for(szt i = 0; i < m_vImgBuff.size(); i++)
+        {
             delete[] m_vImgBuff[i];
         }
     }

@@ -55,6 +55,8 @@ namespace FSDetCoreNS
                                   szt nLengthMax,
                                   szt& nTotalReceived) = 0;
 
+        virtual void ClearDataInSocket() = 0;
+        
         /**
          * @brief destructor
          */
@@ -132,6 +134,8 @@ namespace FSDetCoreNS
 
         int32 ReceiveData(char* ptrchData, szt nLengthMin, szt nLengthMax, szt& nTotalReceived);
 
+        virtual void ClearDataInSocket();
+
     private:
         bool HasData();
 
@@ -182,6 +186,8 @@ namespace FSDetCoreNS
 
         // NOT YET IMPLEMENTED
         int32 ReceiveData(char* ptrchData, szt nLengthMin, szt nLengthMax, szt& nTotalReceived);
+
+        virtual void ClearDataInSocket();
 
     private:
         bool HasData();

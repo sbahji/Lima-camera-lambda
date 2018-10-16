@@ -97,6 +97,11 @@ namespace FSDetCoreNS
                                   szt& nTotalReceived) = 0;
 
         /**
+         * @brief clear the old data in the socket
+         */
+        virtual void ClearDataInSocket() = 0;
+        
+        /**
          * @brief destructor
          */
         virtual ~NetworkInterface();
@@ -148,6 +153,9 @@ namespace FSDetCoreNS
                                   szt nLengthMax,
                                   szt& nTotalReceived);
 
+        virtual void ClearDataInSocket();
+        
+
     private:
         NetworkImplementation* m_objNetworkImpl;
     };
@@ -190,6 +198,8 @@ namespace FSDetCoreNS
                                   szt nLengthMin,
                                   szt nLengthMax,
                                   szt& nTotalReceived);
+
+        virtual void ClearDataInSocket();
 
     private:
         NetworkImplementation* m_objNetworkImpl;
