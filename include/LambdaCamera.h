@@ -2,11 +2,20 @@
 #define LAMBDACAMERA_H
 
 #include "lima/Debug.h"
-#include "Lambda.h"
+#include "LambdaInclude.h"
 #include "lima/Constants.h"
 #include "lima/HwBufferMgr.h"
 #include "lima/ThreadUtils.h"
+#include "lima/HwEventCtrlObj.h"
+
 #include <fsdetector/lambda/LambdaInterface.h>
+
+/*************************************************************************/
+#define REPORT_EVENT(desc)  {   \
+                                Event *my_event = new Event(Hardware,Event::Info, Event::Camera, Event::Default,desc); \
+                                m_cam->getEventCtrlObj()->reportEvent(my_event); \
+                            }
+/*************************************************************************/
 
 class BufferCtrlObj;
 
@@ -27,7 +36,7 @@ public:
 		Ready, Exposure, Readout, Latency, Fault
 	};
 
-	Camera(std::string& config_path);
+	Camera(std::string& config_path, bool distortion_correction);
 	~Camera();
 	
 	LambdaInterface *m_objDetSys;
@@ -53,13 +62,32 @@ public:
 	double 	getTemperature();
 	double 	getTemperatureSetPoint();
 	void	setTemperatureSetPoint(double temperature);
-	unsigned short getDistortionCorrection();
+
+	bool getDistortionCorrection();
+	void setDistortionCorrection(bool distortion_correction);
+    
+	void setOperationMode(std::string operation_mode);
+	std::string getOperationMode();
+
+	void setCompressionEnabled(bool compression_enabled, int comp_level);
+	void getCompressionEnabled(bool & compression_enabled, int & comp_level);
+
+	std::string getConfigFilePath();
+
+	float getReadoutTimeMs();
+
+	void setThresholdEnergy(int threshold_no, float energy);
+	float getThresholdEnergy(int threshold_no);
+
+	bool getBurstMode();
+
+	void getLatencyTime(double & latency_time);
+	void setLatencyTime(double  latency_time);
 
 	//-- Synch control object
-
-	TrigMode m_trigger_mode;
 	void setTrigMode(TrigMode  mode);
 	void getTrigMode(TrigMode& mode);
+	bool checkTrigMode(TrigMode trig_mode);
 
 	//-- Shutter managment : TODO Shutter control object
 	//---------------------------------------------------------------------------------------
@@ -82,6 +110,9 @@ public:
 	void setRoi(const Roi& set_roi);
 	void getRoi(Roi& hw_roi);   
 
+	// Gets the Lima event control object
+	HwEventCtrlObj* getEventCtrlObj();
+
 private:
 	class CameraThread: public CmdThread
 	{
@@ -89,7 +120,7 @@ private:
 	public:
 		enum
 		{ // Status
-			Ready = MaxThreadStatus, Exposure, Readout, Latency,
+			Ready = MaxThreadStatus, Exposure, Readout, Latency, Fault,
 		};
 
 		enum
@@ -100,12 +131,20 @@ private:
 		CameraThread(Camera& cam);
 
 		virtual void start();
+		
+		// aborts the thread
+		virtual void abort();
+
 		bool m_force_stop;
 		short m_shFrameErrorCode;
 
 	protected:
 		virtual void init();
 		virtual void execCmd(int cmd);
+
+	private:
+		bool checkImageValid(void * tData, int lFrameNo,short shErrCode);
+
 	private:
 		void execStartAcq();
 		void execStopAcq();
@@ -130,16 +169,14 @@ private:
 	unsigned short m_roi_p2;
 	unsigned short m_roi_pbin;
 	
-	
-        Size m_size;
 	int m_shutter_mode;
 	int m_int_acq_mode;
-	
-	int *m_frame;
-	short *m_sframe;
 
 	// Buffer control object
 	SoftBufferCtrlObj m_bufferCtrlObj;
+
+    // Lima event control object
+    HwEventCtrlObj m_event_ctrl_obj;
 
 	bool m_bBuildInCompressor;
 	

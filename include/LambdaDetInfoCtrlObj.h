@@ -2,7 +2,7 @@
 #define LAMBDADETINFOCTRLOBJ_H
 
 #include "lima/Debug.h"
-#include "Lambda.h"
+#include "LambdaInclude.h"
 #include "LambdaCompatibility.h"
 #include "lima/HwDetInfoCtrlObj.h"
 
