@@ -26,20 +26,7 @@ SyncCtrlObj::~SyncCtrlObj()
 //-----------------------------------------------------
 bool SyncCtrlObj::checkTrigMode(TrigMode trig_mode)
 {
-	bool valid_mode = false;
-	switch (trig_mode)
-	{
-		case IntTrig:
-		case ExtTrigSingle:
-		case ExtTrigMult:
-		case ExtGate:
-			valid_mode = true;
-		break;
-
-		default:
-			valid_mode = false;
-	}
-	return valid_mode;
+	return m_cam.checkTrigMode(trig_mode);
 }
 
 //-----------------------------------------------------
@@ -52,7 +39,6 @@ void SyncCtrlObj::setTrigMode(TrigMode trig_mode)
         THROW_HW_ERROR(InvalidValue) << "Invalid " << DEB_VAR1(trig_mode);
 
 	m_cam.setTrigMode(trig_mode);
-
 }
 
 //-----------------------------------------------------
@@ -84,7 +70,7 @@ void SyncCtrlObj::getExpTime(double& exp_time)
 //-----------------------------------------------------
 void SyncCtrlObj::setLatTime(double lat_time)
 {
-	//@TODO
+	m_cam.setLatencyTime(lat_time);
 }
 
 //-----------------------------------------------------
@@ -92,7 +78,7 @@ void SyncCtrlObj::setLatTime(double lat_time)
 //-----------------------------------------------------
 void SyncCtrlObj::getLatTime(double& lat_time)
 {
-	//@TODO
+	m_cam.getLatencyTime(lat_time);
 }
 
 //-----------------------------------------------------

@@ -66,11 +66,30 @@ namespace FSDetCoreNS
 
         virtual void DoTaskAction();
 
+        /**
+         * @brief start task
+         */
+        virtual void Start();
+
+        /**
+         * @brief stop task
+         */
+        virtual void Stop();
+
+        /**
+         * @brief exit task
+         */
+        virtual void Exit();
+        
       protected:
         string m_strTaskName;
         Enum_priority m_enumPriority;
         Enum_priority* m_enumTargetPriority;
         int32 m_nID;
+        bool m_fStart,m_fExit;
+        
+        boost::condition_variable m_bstCond;
+        boost::mutex m_bstSync;
     };
 
     /**
