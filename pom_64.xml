@@ -17,21 +17,21 @@
     <description>This module controls the Lambda XSpectrum Detectors</description>
     
 	<properties>
-		<!-- path to the 64 bits libs ${FL-64bits-libs} -->
-        <FL-64bits-libs>/home/informatique/ica/ica/LIB_EL6_64</FL-64bits-libs>
+		<!-- path to the 64 bits libs ${libs-64bits} -->
+        <libs-64bits>/home/informatique/ica/ica/LIB_EL6_64</libs-64bits>
 	</properties>
     
     <scm>
-        <connection>scm:git:git://github.com/soleil-ica/Lima-camera-slsjungfrau.git</connection>
-        <developerConnection>scm:git:git://github.com/soleil-ica/Lima-camera-slsjungfrau.git</developerConnection>
-        <url>https://github.com/soleil-ica/Lima-camera-slsjungfrau</url>
+        <connection>scm:git:git://github.com/soleil-ica/Lima-camera-lambda.git</connection>
+        <developerConnection>scm:git:git://github.com/soleil-ica/Lima-camera-lambda.git</developerConnection>
+        <url>https://github.com/soleil-ica/Lima-camera-lambda</url>
     </scm>
 
     <dependencies>
         <dependency>
             <groupId>fr.soleil.lib</groupId>
 			<artifactId>LimaCore-amd64-Linux-gcc-shared-${mode}</artifactId>
-            <version>1.7.7-SNAPSHOT</version>
+            <version>1.7.7</version>
         </dependency>
     </dependencies>
 
@@ -46,7 +46,6 @@
                         <includePaths>
                             <includePath>include</includePath>
                             <includePath>sdk/include/</includePath>
-                            <includePath>include/</includePath>
                         </includePaths>         
                         <!-- define less verbose mode for gcc-->
                         <options>
@@ -62,18 +61,18 @@
 							<!-- liblambda -->
 							<name>lambda</name>
 							<type>shared</type>
-							<directory>./sdk/bin/</directory>
+							<directory>sdk/bin/</directory>
 						</lib>
 						<lib>
 							<!-- libfsdetcore -->
 							<name>fsdetcore</name>
 							<type>shared</type>
-							<directory>./sdk/bin/</directory>
+							<directory>sdk/bin/</directory>
 						</lib>
 						<lib>
 							<name>boost_thread</name>
 							<type>shared</type>
-							<directory>./sdk/bin/</directory>
+							<directory>sdk/bin/</directory>
 						</lib>
 					</libs>
 				   </linker>
