@@ -10,7 +10,7 @@
 
     <groupId>fr.soleil.lib.Lima.Camera</groupId>
     <artifactId>LimaLambda-amd64-Linux-gcc-shared-${mode}</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
 
     <packaging>nar</packaging>
     <name>LimaLambda</name>
