@@ -32,14 +32,14 @@ include(GenerateExportHeader)
 
 #LIBRARIES
 find_library(LIB_FOR_LAMBDA
-  NAMES lambda
+  NAMES xsp
   PATHS "${CMAKE_CURRENT_SOURCE_DIR}/sdk/bin"
   NO_CMAKE_FIND_ROOT_PATH
   NO_DEFAULT_PATH
   )
 message("${LIB_FOR_LAMBDA}") 
 if (("${LIB_FOR_LAMBDA}" STREQUAL "LIB_FOR_LAMBDA-NOTFOUND"))
-  message(FATAL_ERROR "${NAME} : liblambda not found, please update your path using cmake-gui")
+  message(FATAL_ERROR "${NAME} : libxsp not found, please update your path using cmake-gui")
 endif()
 # If conda build, always set lib dir to 'lib'
 if($ENV{CONDA_BUILD})

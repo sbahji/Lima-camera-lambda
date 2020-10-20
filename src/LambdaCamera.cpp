@@ -9,8 +9,7 @@
 
 
 #include "LambdaCamera.h"
-
-#include <fsdetector/lambda/LambdaSysImpl.h>
+//#include <fsdetector/lambda/LambdaSysImpl.h>
 
 using namespace lima;
 using namespace lima::Lambda;
@@ -26,7 +25,7 @@ Camera::CameraThread::CameraThread(Camera& cam)
 	DEB_TRACE() << "CameraThread::CameraThread - BEGIN";
 	m_cam->m_acq_frame_nb = 0;
 	m_force_stop = false;
-	m_shFrameErrorCode = 0;
+	m_shFrameErrorCode = FrameStatusCode::FRAME_OK;
 	DEB_TRACE() << "CameraThread::CameraThread - END";
 }
 
@@ -91,103 +90,126 @@ void Camera::CameraThread::execStartAcq()
   int nb_frames = m_cam->m_nb_frames;
     
   // start acquisition
-  m_cam->m_objDetSys->StartImaging();
+  //m_cam->m_objDetSys->StartImaging();
+  m_cam->detector->startAcquisition();
   
   m_cam->m_acq_frame_nb = 0;
   acq_frame_nb = 0;
 
   bool continueAcq = true;
   while(continueAcq && (!m_cam->m_nb_frames || m_cam->m_acq_frame_nb < m_cam->m_nb_frames)){
+    //if(m_cam->m_objDetSys->GetQueueDepth()>0){
+		if(m_cam->receiver->framesQueued()>0){
+			const Frame* frame;
+			
+			bool bValid;
+			int nDataLength;
+			int m_nSizeX;
+			int m_nSizeY;
+			int m_nDepth;
+			int m_nDataType;
+			int lambda_frame_nb;
+			ImageType image_type;
+			
+			if(m_cam->m_bBuildInCompressor){
+			//ptrchData =  m_cam->m_objDetSys->GetCompressedData(acq_frame_nb,
+			//						   m_shFrameErrorCode,
+			//						   nDataLength);
 
-    if(m_cam->m_objDetSys->GetQueueDepth()>0){
-      short* ptrshData;
-      int* ptrnData;
-      char* ptrchData;
-      bool bValid;
-      int nDataLength;
-      int m_nSizeX;
-      int m_nSizeY;
-      int m_nDepth;
-      int m_nDataType;
-      int lambda_frame_nb;
-      ImageType image_type;
-      
-      if(m_cam->m_bBuildInCompressor){
-	ptrchData =  m_cam->m_objDetSys->GetCompressedData(acq_frame_nb,
-							   m_shFrameErrorCode,
-							   nDataLength);
-      } else {  //decoded image,without pre-compression
+				frame =  m_cam->receiver->frame(1500);
+				if (frame != nullptr) {
+					acq_frame_nb = frame->nr();
+					m_shFrameErrorCode = frame->status();
+					auto ptrch_data = reinterpret_cast<const uint8_t*>(frame->data());
+					nDataLength = frame->size();
+					// process frame data, i.e. copy using memcpy(<dest>, frame_data, frame_size);
+					m_cam->receiver->release(acq_frame_nb);
+				}
+			} else {  //decoded image,without pre-compression
 
-	m_cam->m_objDetSys->GetImageFormat(m_nSizeX,m_nSizeY,m_nDepth);
-	
-	if(m_nDepth == 12)
-	  m_nDataType = 1; //short
-	else if(m_nDepth == 24)
-	  m_nDataType = 2; //int
+				//m_cam->m_objDetSys->GetImageFormat(m_nSizeX,m_nSizeY,m_nDepth);
+				m_nSizeX = m_cam->receiver->frameWidth();
+				m_nSizeY = m_cam->receiver->frameHeight();
+				m_nDepth = m_cam->receiver->frameDepth();
+			
+				if(m_nDepth == 12)
+				m_nDataType = 1; //short
+				else if(m_nDepth == 24)
+				m_nDataType = 2; //int
 
-	m_cam->getImageType(image_type);
-	FrameDim frame_dim( m_nSizeX, m_nSizeY, image_type);
-	
-	if(m_nDataType == 1){ // short
+				m_cam->getImageType(image_type);
+				FrameDim frame_dim( m_nSizeX, m_nSizeY, image_type);
+				
+				if(m_nDataType == 1){ // short
+					int not_correct_frame = 1;
+					while(not_correct_frame){
+						// ptrshData = m_cam->m_objDetSys->GetDecodedImageShort(lambda_frame_nb,
+						// 						 m_shFrameErrorCode);
+						frame =  m_cam->receiver->frame(1500);
+						if (frame != nullptr) {
+							lambda_frame_nb = frame->nr();
+							m_shFrameErrorCode= frame->status();
+							auto ptrsh_data = reinterpret_cast<const uint16_t*>(frame->data());
+							// process frame data
+							
+							DEB_TRACE() << "Prepare the Frame ptr - " << DEB_VAR1(acq_frame_nb);
+							setStatus(Readout);
+							
+							if(lambda_frame_nb == acq_frame_nb + 1){
+								DEB_TRACE() << "copy data into the Frame ptr - " << DEB_VAR1(m_nSizeX*m_nSizeY);
+								m_cam->m_sframe = (short*) ptrsh_data;
+								void *ptr = buffer_mgr.getFrameBufferPtr(acq_frame_nb);
+								memcpy((short *)ptr, (short *)m_cam->m_sframe, frame_dim.getMemSize()); //we need a nb of BYTES .
+								not_correct_frame = 0;
+							}
+							m_cam->receiver->release(lambda_frame_nb);
+						}		
+					}
+				} else if(m_nDataType == 2){ // int
+				// get the address of the image in memory
+				//ptrnData = m_cam->m_objDetSys->GetDecodedImageInt(lambda_frame_nb,
+				//						    m_shFrameErrorCode);
+					frame =  m_cam->receiver->frame(1500);
+					if (frame != nullptr) {
+						lambda_frame_nb = frame->nr();
+						m_shFrameErrorCode= frame->status();
+						auto ptrn_data = reinterpret_cast<const uint16_t*>(frame->data());
+						// process frame data
+						
+						DEB_TRACE() << "Prepare the Frame ptr - " << DEB_VAR1(acq_frame_nb);
+						setStatus(Readout);
+						DEB_TRACE() << "copy data into the Frame ptr - " << DEB_VAR1(m_nSizeX*m_nSizeY);
+						m_cam->m_frame = (int*) ptrn_data;
+						void *ptr = buffer_mgr.getFrameBufferPtr(acq_frame_nb);
+						memcpy((int *)ptr, (int *)m_cam->m_frame, frame_dim.getMemSize()); //we need a nb of BYTES .
+						m_cam->receiver->release(lambda_frame_nb);
+					}
+				}
 
-	  int not_correct_frame = 1;
-	  while(not_correct_frame){
-	    ptrshData = m_cam->m_objDetSys->GetDecodedImageShort(lambda_frame_nb,
-								 m_shFrameErrorCode);
-	    
-	    
-	    DEB_TRACE() << "Prepare the Frame ptr - " << DEB_VAR1(acq_frame_nb);
-	    setStatus(Readout);
-	    
-	    if(lambda_frame_nb == acq_frame_nb + 1){
-	      DEB_TRACE() << "copy data into the Frame ptr - " << DEB_VAR1(m_nSizeX*m_nSizeY);
-	      m_cam->m_sframe = (short*) ptrshData;
-	      void *ptr = buffer_mgr.getFrameBufferPtr(acq_frame_nb);
-	      memcpy((short *)ptr, (short *)m_cam->m_sframe, frame_dim.getMemSize()); //we need a nb of BYTES .
-	      not_correct_frame = 0;
-	    }
-	      
-	  }
-	  
-	} else if(m_nDataType == 2){ // int
-	  // get the address of the image in memory
-	  ptrnData = m_cam->m_objDetSys->GetDecodedImageInt(lambda_frame_nb,
-							    m_shFrameErrorCode);
-	  
-	  DEB_TRACE() << "Prepare the Frame ptr - " << DEB_VAR1(acq_frame_nb);
-	  setStatus(Readout);
-	  DEB_TRACE() << "copy data into the Frame ptr - " << DEB_VAR1(m_nSizeX*m_nSizeY);
-	  m_cam->m_frame = (int*) ptrnData;
-	  void *ptr = buffer_mgr.getFrameBufferPtr(acq_frame_nb);
-	  memcpy((int *)ptr, (int *)m_cam->m_frame, frame_dim.getMemSize()); //we need a nb of BYTES .
-	}
-      }
-	 
-	
-      buffer_mgr.setStartTimestamp(Timestamp::now());
-	  
-      DEB_TRACE() << "Declare a new Frame Ready.";
-      HwFrameInfoType frame_info;
-      frame_info.acq_frame_nb = m_cam->m_acq_frame_nb;
-      buffer_mgr.newFrameReady(frame_info);
-	  
-      acq_frame_nb++;
-      m_cam->m_acq_frame_nb = acq_frame_nb;
+			}
+			buffer_mgr.setStartTimestamp(Timestamp::now());
+			
+			DEB_TRACE() << "Declare a new Frame Ready.";
+			HwFrameInfoType frame_info;
+			frame_info.acq_frame_nb = m_cam->m_acq_frame_nb;
+			buffer_mgr.newFrameReady(frame_info);
+			
+			acq_frame_nb++;
+			m_cam->m_acq_frame_nb = acq_frame_nb;
+			
+		}
 
-    }
-
-    if(m_force_stop){
-      continueAcq = false;
-      m_force_stop = false;
-      break;
-    }
-
-    
+		if(m_force_stop){
+			continueAcq = false;
+			m_force_stop = false;
+			break;
+    	}
   } /* End while */
   
   
   // stop acquisition
-  m_cam->m_objDetSys->StopImaging();
+  //m_cam->m_objDetSys->StopImaging();
+  m_cam->detector->stopAcquisition();
   /*
   if (m_cam->m_frame){
     delete[] m_cam->m_frame;
@@ -224,12 +246,26 @@ m_bufferCtrlObj()
 	DEB_CONSTRUCTOR();
 	DEB_TRACE() << "Camera::Camera";
 	m_bBuildInCompressor = false;
-	m_objDetSys = new LambdaSysImpl(config_path);
+
+	//m_objDetSys = new LambdaSysImpl(config_path);
+	
+	libxsp_system = createSystem(config_path);
+	detector = std::dynamic_pointer_cast<lambda::Detector>(
+							       libxsp_system->detector("lambda")
+							       );
+	receiver = libxsp_system->receiver("lambda/1");
+	libxsp_system->connect();
+	libxsp_system->initialize();
+	
 	int m_nSizeX;
 	int m_nSizeY;
 	int m_nDepth;
+	//m_objDetSys->GetImageFormat(m_nSizeX,m_nSizeY,m_nDepth);
+	m_nSizeX = receiver->frameWidth();
+	m_nSizeY = receiver->frameHeight();
+	m_nDepth = receiver->frameDepth();
 	
-	m_objDetSys->GetImageFormat(m_nSizeX,m_nSizeY,m_nDepth);
+
 	m_size = Size(m_nSizeX,m_nSizeY);
 	
 	m_thread.start();
@@ -282,9 +318,11 @@ void Camera::setNbFrames(int nb_frames)
 		throw LIMA_HW_EXC(InvalidValue, "Invalid nb of frames");
 	  
 	if(nb_frames == 0){
-	  m_objDetSys->SetNImages(1000000);
+	  detector->setFrameCount(1000000);
+	  //m_objDetSys->SetNImages(1000000);
 	} else {
-	  m_objDetSys->SetNImages(nb_frames);
+	  detector->setFrameCount(nb_frames);
+	  //m_objDetSys->SetNImages(nb_frames);
 	}
 	m_nb_frames = nb_frames;
 }
@@ -307,10 +345,10 @@ void Camera::getDetectorModel(std::string& model)
 {
 	DEB_MEMBER_FUNCT();
 	stringstream ss;
-	ss <<"ModId "<< m_objDetSys->GetModuleID()
-	    <<" - Firmware "<<m_objDetSys->GetFirmwareVersion()
-	    <<" - Detector Core "<<m_objDetSys->GetDetCoreVersion()
-	    <<" - Liblambda "<<m_objDetSys->GetLibLambdaVersion();
+	auto chip_ids = detector->chipIds(1);
+	ss <<"ModId "<< chip_ids[0]
+	    <<" - Firmware "<< detector->firmwareVersion(1)
+	    <<" - Liblambda "<< libraryVersion();
 	model = ss.str();
 }
 
@@ -332,7 +370,12 @@ void Camera::prepareAcq()
 	int m_nSizeY;
 	int m_nDepth;
 	
-	m_objDetSys->GetImageFormat(m_nSizeX,m_nSizeY,m_nDepth);
+	//m_objDetSys->GetImageFormat(m_nSizeX,m_nSizeY,m_nDepth);
+
+	m_nSizeX = receiver->frameWidth();
+	m_nSizeY = receiver->frameHeight();
+	m_nDepth = receiver->frameDepth();
+	
 	m_size = Size(m_nSizeX,m_nSizeY);
 }
 
@@ -392,7 +435,8 @@ void Camera::setExpTime(double  exp_time)
 	DEB_TRACE() << "Camera::setExpTime - " << DEB_VAR1(exp_time);
 
 	m_exposure = exp_time * 1E3;//default detector unit is ms
-	m_objDetSys->SetShutterTime(m_exposure);
+	//m_objDetSys->SetShutterTime(m_exposure);
+	detector->setShutterTime(m_exposure);
 }
 
 
@@ -407,16 +451,17 @@ void Camera::setTrigMode(TrigMode  mode)
 
 	switch (mode) {
 	case IntTrig:
-	  m_objDetSys->SetTriggerMode(0); // Internal trigger
+	  detector->setTriggerMode(lambda::TrigMode::SOFTWARE); // Internal trigger
 	  break;
 	case IntTrigMult:	  
 	case ExtTrigMult:
-	  m_objDetSys->SetTriggerMode(1); // External trigger. Once dectector receives trigger, it takes predefined image numbers.
+	  detector->setTriggerMode(lambda::TrigMode::EXT_SEQUENCE); // External trigger. Once dectector receives trigger, it takes predefined image numbers.
 	  break;
 	case ExtTrigSingle:
-	  m_objDetSys->SetTriggerMode(2); // External trigger. Each trigger pulse takes one image.
+	  detector->setTriggerMode(lambda::TrigMode::EXT_FRAMES); // External trigger. Each trigger pulse takes one image.
 	  break;
 	case ExtGate:
+	  //detector->setTriggerMode(lambda::TrigMode::EXIT_FRAME_GATED);
 	case ExtStartStop:
 	case ExtTrigReadout:
 	default:
@@ -546,8 +591,10 @@ void Camera::getImageType(ImageType& type)
 	int m_nSizeY;
 	int m_nDepth;
 	
-	m_objDetSys->GetImageFormat(m_nSizeX,m_nSizeY,m_nDepth);
-	
+	//m_objDetSys->GetImageFormat(m_nSizeX,m_nSizeY,m_nDepth);
+	m_nSizeX = receiver->frameWidth();
+	m_nSizeY = receiver->frameHeight();
+	m_nDepth = receiver->frameDepth();
 	if(m_nDepth == 12)
 	  type = Bpp12; //short
 	else if(m_nDepth == 24)
@@ -662,5 +709,9 @@ HwBufferCtrlObj* Camera::getBufferCtrlObj() {
 }
 
 unsigned short Camera::getDistortionCorrection(){
-  return m_objDetSys->GetDistortionCorrecttionMethod();
+	if(receiver->interpolation() == Interpolation::ON)
+		return 1;
+	else
+  		return 0;
+  //return m_objDetSys->GetDistortionCorrecttionMethod();
 }

@@ -6,15 +6,22 @@
 #include "lima/Constants.h"
 #include "lima/HwBufferMgr.h"
 #include "lima/ThreadUtils.h"
-#include <fsdetector/lambda/LambdaInterface.h>
+//#include <fsdetector/lambda/LambdaInterface.h>
 
+#include <libxsp.h>
 class BufferCtrlObj;
 
 namespace lima
 {
 namespace Lambda
 {
-     using namespace DetLambdaNS;
+  using namespace xsp;
+  using namespace xsp::lambda;
+  // using namespace DetLambdaNS;
+  typedef unique_ptr<xsp::System> uptr_sys;
+  typedef shared_ptr<xsp::lambda::Detector> sptr_det;
+  typedef shared_ptr<xsp::Receiver> sptr_recv;
+  
 //    class Camera
 class LIBLAMBDA_API Camera
 {
@@ -30,7 +37,10 @@ public:
 	Camera(std::string& config_path);
 	~Camera();
 	
-	LambdaInterface *m_objDetSys;
+	//LambdaInterface *m_objDetSys;
+	uptr_sys libxsp_system;
+	sptr_det detector;
+	sptr_recv receiver;
 	
 	void getExpTime(double& exp_time);
 	void setExpTime(double  exp_time);
@@ -101,7 +111,7 @@ private:
 
 		virtual void start();
 		bool m_force_stop;
-		short m_shFrameErrorCode;
+		FrameStatusCode m_shFrameErrorCode;
 
 	protected:
 		virtual void init();
