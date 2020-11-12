@@ -17,7 +17,7 @@ namespace xsp {
 
 #define LIBXSP_VERSION_MAJOR 1
 #define LIBXSP_VERSION_MINOR 3
-#define LIBXSP_VERSION_PATCH 1
+#define LIBXSP_VERSION_PATCH 2
 
 extern std::string libraryVersion();
 extern int libraryMajor();
