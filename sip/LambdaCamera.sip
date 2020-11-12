@@ -35,6 +35,9 @@ namespace Lambda
 
     std::string  getInternalAcqMode();
     void         setInternalAcqMode(std::string );
+
+    private:
+      Camera(const Lambda::Camera&);
 	
   };
 };
