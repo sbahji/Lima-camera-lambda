@@ -62,11 +62,14 @@ void Camera::CameraThread::execCmd(int cmd)
 	int status = getStatus();
 	switch (cmd)
 	{
-		case StartAcq:
-			if (status != Ready)
-				throw LIMA_HW_EXC(InvalidValue, "Not Ready to StartAcq");
-			execStartAcq();
-			break;
+	case StartAcq:
+	  if (status != Ready)
+	    throw LIMA_HW_EXC(InvalidValue, "Not Ready to StartAcq");
+	  execStartAcq();
+	  break;
+	case StopAcq:
+	  setStatus(Ready);
+	  break;
 	}
 	DEB_TRACE() << "CameraThread::execCmd - END";
 }
@@ -292,19 +295,21 @@ Camera::Status Camera::getStatus()
 
 	DEB_RETURN() << DEB_VAR1(thread_status);
 	
+	Camera::Status status;
 	switch (thread_status)
 	{
 		case CameraThread::Ready:
-			return Camera::Ready;
+		  status = Camera::Ready; break;
 		case CameraThread::Exposure:
-			return Camera::Exposure;
+		  status = Camera::Exposure; break;
 		case CameraThread::Readout:
-			return Camera::Readout;
+		  status = Camera::Readout; break;
 		case CameraThread::Latency:
-			return Camera::Latency;
+		  status = Camera::Latency; break;
 		default:
-			throw LIMA_HW_EXC(Error, "Invalid thread status");
+		  throw LIMA_HW_EXC(Error, "Invalid thread status");
 	}
+	return status;
 }
 
 //---------------------------------------------------------------------------------------
