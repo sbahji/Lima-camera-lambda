@@ -9,7 +9,6 @@
 
 
 #include "LambdaCamera.h"
-//#include <fsdetector/lambda/LambdaSysImpl.h>
 
 using namespace lima;
 using namespace lima::Lambda;
@@ -93,7 +92,6 @@ void Camera::CameraThread::execStartAcq()
   int nb_frames = m_cam->m_nb_frames;
     
   // start acquisition
-  //m_cam->m_objDetSys->StartImaging();
   m_cam->detector->startAcquisition();
   
   m_cam->m_acq_frame_nb = 0;
@@ -101,7 +99,6 @@ void Camera::CameraThread::execStartAcq()
 
   bool continueAcq = true;
   while(continueAcq && (!m_cam->m_nb_frames || m_cam->m_acq_frame_nb < m_cam->m_nb_frames)){
-    //if(m_cam->m_objDetSys->GetQueueDepth()>0){
 		if(m_cam->receiver->framesQueued()>0){
 			const Frame* frame;
 			
@@ -115,10 +112,6 @@ void Camera::CameraThread::execStartAcq()
 			ImageType image_type;
 			
 			if(m_cam->m_bBuildInCompressor){
-			//ptrchData =  m_cam->m_objDetSys->GetCompressedData(acq_frame_nb,
-			//						   m_shFrameErrorCode,
-			//						   nDataLength);
-
 				frame =  m_cam->receiver->frame(1500);
 				if (frame != nullptr) {
 					acq_frame_nb = frame->nr();
@@ -129,8 +122,6 @@ void Camera::CameraThread::execStartAcq()
 					m_cam->receiver->release(acq_frame_nb);
 				}
 			} else {  //decoded image,without pre-compression
-
-				//m_cam->m_objDetSys->GetImageFormat(m_nSizeX,m_nSizeY,m_nDepth);
 				m_nSizeX = m_cam->receiver->frameWidth();
 				m_nSizeY = m_cam->receiver->frameHeight();
 				m_nDepth = m_cam->receiver->frameDepth();
@@ -146,8 +137,6 @@ void Camera::CameraThread::execStartAcq()
 				if(m_nDataType == 1){ // short
 					int not_correct_frame = 1;
 					while(not_correct_frame){
-						// ptrshData = m_cam->m_objDetSys->GetDecodedImageShort(lambda_frame_nb,
-						// 						 m_shFrameErrorCode);
 						frame =  m_cam->receiver->frame(1500);
 						if (frame != nullptr) {
 							lambda_frame_nb = frame->nr();
@@ -169,9 +158,6 @@ void Camera::CameraThread::execStartAcq()
 						}		
 					}
 				} else if(m_nDataType == 2){ // int
-				// get the address of the image in memory
-				//ptrnData = m_cam->m_objDetSys->GetDecodedImageInt(lambda_frame_nb,
-				//						    m_shFrameErrorCode);
 					frame =  m_cam->receiver->frame(1500);
 					if (frame != nullptr) {
 						lambda_frame_nb = frame->nr();
@@ -211,18 +197,7 @@ void Camera::CameraThread::execStartAcq()
   
   
   // stop acquisition
-  //m_cam->m_objDetSys->StopImaging();
   m_cam->detector->stopAcquisition();
-  /*
-  if (m_cam->m_frame){
-    delete[] m_cam->m_frame;
-    m_cam->m_frame = 0;
-  }
-  if (m_cam->m_sframe){
-    delete[] m_cam->m_sframe;
-    m_cam->m_sframe = 0;
-  }
-  */
   
   setStatus(Ready);
   
@@ -235,23 +210,14 @@ void Camera::CameraThread::execStartAcq()
 //---------------------------------------------------------------------------------------
 Camera::Camera(std::string& config_path):
 m_thread(*this),
-m_roi_s1(0),
-m_roi_s2(2047),
-m_roi_sbin(1),
-m_roi_p1(0),
-m_roi_p2(2047),
-m_roi_pbin(1),
 m_nb_frames(1),
 m_exposure(1.0),
-m_int_acq_mode(0),
 m_bufferCtrlObj()
 {
 	DEB_CONSTRUCTOR();
 	DEB_TRACE() << "Camera::Camera";
 	m_bBuildInCompressor = false;
 
-	//m_objDetSys = new LambdaSysImpl(config_path);
-	
 	libxsp_system = createSystem(config_path);
 	detector = std::dynamic_pointer_cast<lambda::Detector>(
 							       libxsp_system->detector("lambda")
@@ -263,7 +229,6 @@ m_bufferCtrlObj()
 	int m_nSizeX;
 	int m_nSizeY;
 	int m_nDepth;
-	//m_objDetSys->GetImageFormat(m_nSizeX,m_nSizeY,m_nDepth);
 	m_nSizeX = receiver->frameWidth();
 	m_nSizeY = receiver->frameHeight();
 	m_nDepth = receiver->frameDepth();
@@ -324,10 +289,8 @@ void Camera::setNbFrames(int nb_frames)
 	  
 	if(nb_frames == 0){
 	  detector->setFrameCount(1000000);
-	  //m_objDetSys->SetNImages(1000000);
 	} else {
 	  detector->setFrameCount(nb_frames);
-	  //m_objDetSys->SetNImages(nb_frames);
 	}
 	m_nb_frames = nb_frames;
 }
@@ -580,7 +543,6 @@ void Camera::getImageType(ImageType& type)
 	int m_nSizeY;
 	int m_nDepth;
 	
-	//m_objDetSys->GetImageFormat(m_nSizeX,m_nSizeY,m_nDepth);
 	m_nSizeX = receiver->frameWidth();
 	m_nSizeY = receiver->frameHeight();
 	m_nDepth = receiver->frameDepth();
@@ -589,102 +551,6 @@ void Camera::getImageType(ImageType& type)
 	else if(m_nDepth == 24)
 	  type = Bpp24; //int
 	return;
-}
-
-
-//---------------------------------------------------------------------------------------
-//! Camera::setBin()
-//---------------------------------------------------------------------------------------
-void Camera::setBin(const Bin& bin)
-{
-	DEB_MEMBER_FUNCT();
-	DEB_TRACE() << "Camera::setBin";
-	DEB_PARAM() << DEB_VAR1(bin);
-
-	m_roi_sbin = bin.getX();
-	m_roi_pbin = bin.getY();
-}
-
-//---------------------------------------------------------------------------------------
-//! Camera::getBin()
-//---------------------------------------------------------------------------------------
-void Camera::getBin(Bin& bin)
-{
-	DEB_MEMBER_FUNCT();
-	Bin tmp_bin(m_roi_sbin, m_roi_pbin);
-	bin = tmp_bin;
-
-	DEB_RETURN() << DEB_VAR1(bin);
-}
-
-//---------------------------------------------------------------------------------------
-//! Camera::checkBin()
-//---------------------------------------------------------------------------------------
-void Camera::checkBin(Bin& bin)
-{
-
-	DEB_MEMBER_FUNCT();
-	DEB_TRACE() << "Camera::checkBin";
-	DEB_PARAM() << DEB_VAR1(bin);
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Camera::checkRoi(const Roi& set_roi, Roi& hw_roi)
-{
-	DEB_MEMBER_FUNCT();
-	DEB_TRACE() << "Camera::checkRoi";
-	DEB_PARAM() << DEB_VAR1(set_roi);
-	hw_roi = set_roi;
-
-	DEB_RETURN() << DEB_VAR1(hw_roi);
-}
-
-//---------------------------------------------------------------------------------------
-//! Camera::getRoi()
-//---------------------------------------------------------------------------------------
-void Camera::getRoi(Roi& hw_roi)
-{
-	DEB_MEMBER_FUNCT();
-	Point point1(m_roi_s1, m_roi_p1);
-	Point point2(m_roi_s2, m_roi_p2);
-	Roi tmp_roi(point1, point2);
-
-	hw_roi = tmp_roi;
-
-	DEB_RETURN() << DEB_VAR1(hw_roi);
-}
-
-//---------------------------------------------------------------------------------------
-//! Camera::setRoi()
-//---------------------------------------------------------------------------------------
-void Camera::setRoi(const Roi& set_roi)
-{
-	DEB_MEMBER_FUNCT();
-	DEB_TRACE() << "Camera::setRoi";
-	DEB_PARAM() << DEB_VAR1(set_roi);
-	if (!set_roi.isActive())
-	{
-		DEB_TRACE() << "Roi is not Enabled";
-	}
-	else
-	{
-		//To avoid a double binning, API pvcam apply Roi & Binning together AND Lima Too !		
-		Bin aBin;
-		getBin(aBin);
-		Roi UnbinnedRoi = set_roi.getUnbinned(aBin);
-		Point tmp_top = UnbinnedRoi.getTopLeft();
-		////
-
-		m_roi_s1 = tmp_top.x;
-		m_roi_p1 = tmp_top.y;
-
-		Point tmp_bottom = UnbinnedRoi.getBottomRight();
-
-		m_roi_s2 = tmp_bottom.x;
-		m_roi_p2 = tmp_bottom.y;
-	}
 }
 
 void Camera::getImageSize(Size& size) {
