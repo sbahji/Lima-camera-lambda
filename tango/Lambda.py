@@ -42,8 +42,7 @@
 import PyTango
 from Lima import Core
 from Lima import Lambda as LambdaAcq
-from AttrHelper import get_attr_4u, get_attr_string_value_list
-import AttrHelper
+from Lima.Server import AttrHelper
 
 class Lambda(PyTango.Device_4Impl):
 
@@ -76,10 +75,10 @@ class Lambda(PyTango.Device_4Impl):
 
     @Core.DEB_MEMBER_FUNCT
     def getAttrStringValueList(self, attr_name):
-        return get_attr_string_value_list(self, attr_name)
+        return AttrHelper.get_attr_string_value_list(self, attr_name)
 
     def __getattr__(self,name) :
-        return get_attr_4u(self, name, _LambdaCam)
+        return AttrHelper.get_attr_4u(self, name, _LambdaCam)
 
 class LambdaClass(PyTango.DeviceClass):
 
@@ -95,9 +94,25 @@ class LambdaClass(PyTango.DeviceClass):
 
     attr_list = {
         'distortion_correction':
-            [[PyTango.DevUShort,
-            PyTango.SCALAR,
-            PyTango.READ]],
+        [[PyTango.DevBoolean,
+          PyTango.SCALAR,
+          PyTango.READ]],
+        'temperature':
+        [[PyTango.DevDouble,
+          PyTango.SCALAR,
+          PyTango.READ]],
+        'humidity':
+        [[PyTango.DevDouble,
+          PyTango.SCALAR,
+          PyTango.READ]],
+        'energy_threshold':
+        [[PyTango.DevDouble,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE]],        
+        'high_voltage':
+        [[PyTango.DevDouble,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE]],        
         }
 
     def __init__(self,name) :
