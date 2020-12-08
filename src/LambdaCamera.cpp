@@ -314,9 +314,10 @@ void Camera::getDetectorModel(std::string& model)
 	DEB_MEMBER_FUNCT();
 	stringstream ss;
 	auto chip_ids = detector->chipIds(1);
-	ss <<"ModId "<< chip_ids[0]
-	    <<" - Firmware "<< detector->firmwareVersion(1)
-	    <<" - Liblambda "<< libraryVersion();
+	ss << "Nb. modules " << detector->numberOfModules()
+	   <<" - Mod #1 Id "<< chip_ids[0];
+	//<<" - Firmware "<< detector->firmwareVersion(1)
+	//<<" - Liblambda "<< libraryVersion();
 	model = ss.str();
 }
 
@@ -563,10 +564,6 @@ HwBufferCtrlObj* Camera::getBufferCtrlObj() {
     return &m_bufferCtrlObj;
 }
 
-unsigned short Camera::getDistortionCorrection(){
-	if(receiver->interpolation() == Interpolation::ON)
-		return 1;
-	else
-  		return 0;
-  //return m_objDetSys->GetDistortionCorrecttionMethod();
+void Camera::getDistortionCorrection(bool &is_on){
+  is_on = (receiver->interpolation() == Interpolation::ON);
 }
