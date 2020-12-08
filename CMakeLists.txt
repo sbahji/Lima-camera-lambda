@@ -33,9 +33,6 @@ include(GenerateExportHeader)
 #LIBRARIES
 find_library(SDK_LIBRARIES
   NAMES xsp
-  PATHS "${CMAKE_CURRENT_SOURCE_DIR}/sdk/bin"
-  NO_CMAKE_FIND_ROOT_PATH
-  NO_DEFAULT_PATH
   )
 
 find_path(SDK_INCLUDE_DIRS
@@ -119,8 +116,7 @@ target_link_libraries(lambda PUBLIC limacore)
 
 #target_compile_definitions(lambda PUBLIC ${SDK_DEFINITIONS})
 
-target_include_directories(lambda PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/sdk/include>")
-#target_include_directories(lambda PUBLIC ${SDK_INCLUDE_DIRS})
+target_include_directories(lambda PUBLIC ${SDK_INCLUDE_DIRS})
 
 target_link_libraries(lambda PUBLIC ${SDK_LIBRARIES})
 
