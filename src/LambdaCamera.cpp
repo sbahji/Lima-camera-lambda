@@ -458,11 +458,10 @@ void Camera::setTrigMode(TrigMode  mode)
 	case IntTrig:
 	  detector->setTriggerMode(lambda::TrigMode::SOFTWARE); // Internal trigger
 	  break;
-	case IntTrigMult:	  
-	case ExtTrigMult:
+	case ExtTrigSingle:
 	  detector->setTriggerMode(lambda::TrigMode::EXT_SEQUENCE); // External trigger. Once dectector receives trigger, it takes predefined image numbers.
 	  break;
-	case ExtTrigSingle:
+	case ExtTrigMult:
 	  detector->setTriggerMode(lambda::TrigMode::EXT_FRAMES); // External trigger. Each trigger pulse takes one image.
 	  break;
 	case ExtGate:
