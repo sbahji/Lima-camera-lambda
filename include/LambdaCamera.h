@@ -59,11 +59,15 @@ public:
 	
 
 	HwBufferCtrlObj* getBufferCtrlObj();
-	
-	double 	getTemperature();
-	double 	getTemperatureSetPoint();
-	void	setTemperatureSetPoint(double temperature);
-	unsigned short getDistortionCorrection();
+
+	//-- Camera specific configuration parameters
+	void getEnergyThreshold(double &energy);
+	void setEnergyThreshold(double energy);	
+	void getTemperature(double &temperature);
+	void getDistortionCorrection(bool &is_on);
+	void getHumidity(double &percent);
+	void getHighVoltage(double &voltage);
+	void setHighVoltage(double voltage);
 
 	//-- Synch control object
 

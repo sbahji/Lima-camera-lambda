@@ -28,13 +28,13 @@ namespace Lambda
     void getTrigMode(TrigMode &mode /Out/);
     void setTrigMode(TrigMode mode);
 
-    float     getTemperature(); 
-    float     getTemperatureSetPoint();
-    void      setTemperatureSetPoint( float);
-    unsigned short   getDistortionCorrection();
-
-    std::string  getInternalAcqMode();
-    void         setInternalAcqMode(std::string );
+    void getEnergyThreshold(double &energy /Out/);
+    void setEnergyThreshold(double energy);
+    void getTemperature(double &temperature /Out/); 
+    void getDistortionCorrection(bool &is_on /Out/);
+    void getHumidity(double &percent /Out/);
+    void getHighVoltage(double &voltage /Out/);
+    void setHighVoltage(double voltage);
 
     private:
       Camera(const Lambda::Camera&);

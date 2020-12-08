@@ -486,96 +486,81 @@ void Camera::getTrigMode(TrigMode& mode)
 	DEB_RETURN() << DEB_VAR1(mode);
 }
 
-
 //---------------------------------------------------------------------------------------
-//! Camera::setShutterMode()
+//! Camera::getEnergyThreshold()
+//! energy threshold in KeV
 //---------------------------------------------------------------------------------------
-void Camera::setShutterMode(int mode)
+void Camera::getEnergyThreshold(double& energy)
 {
 	DEB_MEMBER_FUNCT();
-	DEB_TRACE() << "Camera::setShutterMode - " << DEB_VAR1(mode);
-	DEB_PARAM() << DEB_VAR1(mode);
+	// up to 8 thresholds can be set, we only use the first one
+	auto thresholds = detector->thresholds();
+	energy = thresholds[0];
+	DEB_RETURN() << DEB_VAR1(energy);
 }
 
 //---------------------------------------------------------------------------------------
-//! Camera::getShutterMode()
+//! Camera::setEnergyThreshold()
+//! energy threshold in KeV
 //---------------------------------------------------------------------------------------
-void Camera::getShutterMode(int& mode)
+void Camera::setEnergyThreshold(double energy)
 {
 	DEB_MEMBER_FUNCT();
-	mode = m_shutter_mode;
-	DEB_RETURN() << DEB_VAR1(mode);
+	DEB_TRACE() << "Camera::setEnergyThreshold - " << DEB_VAR1(energy);
+	DEB_PARAM() << DEB_VAR1(energy);
+	detector->setThresholds(std::vector<double>{energy});
 }
 
 //---------------------------------------------------------------------------------------
 //! Camera::getTemperature()
 //---------------------------------------------------------------------------------------
-double Camera::getTemperature()
+void Camera::getTemperature(double &temperature)
 {
 	DEB_MEMBER_FUNCT();
+	auto module_nr = 1;
+	auto temps = detector->temperature(module_nr);
+	temperature = temps[0];
 }
 
 //---------------------------------------------------------------------------------------
-//! Camera::getTemperatureSetPoint()
+//! Camera::getHumidity()
 //---------------------------------------------------------------------------------------
-double Camera::getTemperatureSetPoint()
+void Camera::getHumidity(double &percent)
 {
 	DEB_MEMBER_FUNCT();
+	auto module_nr = 1;
+	auto hum = detector->humidity(module_nr);
+	percent = hum;
+}
+
+
+//---------------------------------------------------------------------------------------
+//! Camera::getHighVoltage()
+//! high voltage in Volt
+//---------------------------------------------------------------------------------------
+void Camera::getHighVoltage(double& voltage)
+{
+	DEB_MEMBER_FUNCT();
+	auto module_nr = 1;
+	auto hv = detector->voltage(module_nr);
+	voltage = hv;
+	DEB_RETURN() << DEB_VAR1(voltage);
 }
 
 //---------------------------------------------------------------------------------------
-//! Camera::setTemperatureSetPoint()
+//! Camera::setHighVoltage()
+//! high voltage in Volt
 //---------------------------------------------------------------------------------------
-void Camera::setTemperatureSetPoint(double temperature)
+void Camera::setHighVoltage(double voltage)
 {
 	DEB_MEMBER_FUNCT();
-	DEB_TRACE() << "Camera::setTemperatureSetPoint - " << DEB_VAR1(temperature);
-
+	DEB_TRACE() << "Camera::setHighVoltage - " << DEB_VAR1(voltage);
+	DEB_PARAM() << DEB_VAR1(voltage);
+	auto module_nr = 1;
+	detector->setVoltage(module_nr, voltage);
 }
-
 //---------------------------------------------------------------------------------------
 //! Camera::getInternalAcqMode()
-//---------------------------------------------------------------------------------------
-std::string Camera::getInternalAcqMode()
-{
-	DEB_MEMBER_FUNCT();
-	std::string mode = "UNKNOWN";
-	if (m_int_acq_mode == 0)
-	{
-		DEB_RETURN() << DEB_VAR1("STANDARD");
-		mode = "STANDARD";
-	}
-	else if (m_int_acq_mode == 1)
-	{
-		DEB_RETURN() << DEB_VAR1("CONTINUOUS");
-		mode = "CONTINUOUS";
-	}
-	else if (m_int_acq_mode == 2)
-	{
-		DEB_RETURN() << DEB_VAR1("FOCUS");
-		mode = "FOCUS";
-	}
-	return mode;
-}
-
-//---------------------------------------------------------------------------------------
-//! Camera::setInternalAcqMode()
-//---------------------------------------------------------------------------------------
-void Camera::setInternalAcqMode(std::string mode)
-{
-	DEB_MEMBER_FUNCT();
-	DEB_PARAM() << DEB_VAR1(mode);
-
-	if (mode == "STANDARD")
-		m_int_acq_mode = 0;
-	else if (mode == "CONTINUOUS")
-		m_int_acq_mode = 1;
-	else if (mode == "FOCUS")
-		m_int_acq_mode = 2;
-	else
-		THROW_HW_ERROR(Error) << "Incorrect Internal Acquisition mode !";
-}
-
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
