@@ -31,15 +31,18 @@ include(GNUInstallDirs)
 include(GenerateExportHeader)
 
 #LIBRARIES
-find_library(LIB_FOR_LAMBDA
-  NAMES lambda
-  PATHS "${CMAKE_CURRENT_SOURCE_DIR}/sdk/bin"
-  NO_CMAKE_FIND_ROOT_PATH
-  NO_DEFAULT_PATH
+find_library(SDK_LIBRARIES
+  NAMES xsp
   )
-message("${LIB_FOR_LAMBDA}") 
-if (("${LIB_FOR_LAMBDA}" STREQUAL "LIB_FOR_LAMBDA-NOTFOUND"))
-  message(FATAL_ERROR "${NAME} : liblambda not found, please update your path using cmake-gui")
+
+find_path(SDK_INCLUDE_DIRS
+  NAMES libxsp.h
+  )
+message("${SDK_LIBRARIES}")
+message("${SDK_INCLUDE_DIRS}")
+
+if (("${SDK_LIBRARIES}" STREQUAL "SDK_LIBRARIES-NOTFOUND"))
+  message(FATAL_ERROR "${NAME} : libxsp not found, please update your path using cmake-gui")
 endif()
 # If conda build, always set lib dir to 'lib'
 if($ENV{CONDA_BUILD})
@@ -111,17 +114,17 @@ target_include_directories(lambda
 
 target_link_libraries(lambda PUBLIC limacore)
 
+#target_compile_definitions(lambda PUBLIC ${SDK_DEFINITIONS})
+
+target_include_directories(lambda PUBLIC ${SDK_INCLUDE_DIRS})
+
+target_link_libraries(lambda PUBLIC ${SDK_LIBRARIES})
+
 if(WIN32)
   target_compile_definitions(lambda
     PRIVATE lambda_EXPORTS
     PUBLIC NOMINMAX)
   set_target_properties(lambda PROPERTIES PREFIX "lib" IMPORT_PREFIX "lib")
-endif()
-
-find_package(OpenMP)
-if (OPENMP_FOUND)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
 
 # Binding code for python

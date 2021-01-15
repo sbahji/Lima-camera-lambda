@@ -63,18 +63,6 @@ void Interface::reset(ResetLevel reset_level)
 	DEB_PARAM() << DEB_VAR1(reset_level);
 
 	stopAcq();
-
-	Size image_size;
-	m_det_info->getMaxImageSize(image_size);
-	ImageType image_type;
-	m_det_info->getDefImageType(image_type);
-	FrameDim frame_dim(image_size, image_type);
-
-	HwBufferCtrlObj *buffer = m_cam.getBufferCtrlObj();
-	buffer->setFrameDim(frame_dim);
-
-	buffer->setNbConcatFrames(1);
-	buffer->setNbBuffers(1);
 }
 
 //-----------------------------------------------------

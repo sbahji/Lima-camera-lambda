@@ -6,7 +6,8 @@
 #include "lima/Constants.h"
 #include "lima/HwBufferMgr.h"
 #include "lima/ThreadUtils.h"
-#include <fsdetector/lambda/LambdaInterface.h>
+
+#include <libxsp.h>
 
 class BufferCtrlObj;
 
@@ -14,7 +15,13 @@ namespace lima
 {
 namespace Lambda
 {
-     using namespace DetLambdaNS;
+  using namespace xsp;
+  using namespace xsp::lambda;
+
+  typedef unique_ptr<xsp::System> uptr_sys;
+  typedef shared_ptr<xsp::lambda::Detector> sptr_det;
+  typedef shared_ptr<xsp::Receiver> sptr_recv;
+  
 //    class Camera
 class LIBLAMBDA_API Camera
 {
@@ -30,7 +37,10 @@ public:
 	Camera(std::string& config_path);
 	~Camera();
 	
-	LambdaInterface *m_objDetSys;
+	//LambdaInterface *m_objDetSys;
+	uptr_sys libxsp_system;
+	sptr_det detector;
+	sptr_recv receiver;
 	
 	void getExpTime(double& exp_time);
 	void setExpTime(double  exp_time);
@@ -49,11 +59,15 @@ public:
 	
 
 	HwBufferCtrlObj* getBufferCtrlObj();
-	
-	double 	getTemperature();
-	double 	getTemperatureSetPoint();
-	void	setTemperatureSetPoint(double temperature);
-	unsigned short getDistortionCorrection();
+
+	//-- Camera specific configuration parameters
+	void getEnergyThreshold(double &energy);
+	void setEnergyThreshold(double energy);	
+	void getTemperature(double &temperature);
+	void getDistortionCorrection(bool &is_on);
+	void getHumidity(double &percent);
+	void getHighVoltage(double &voltage);
+	void setHighVoltage(double voltage);
 
 	//-- Synch control object
 
@@ -66,22 +80,10 @@ public:
 	void setShutterMode(int mode);
 	void getShutterMode(int& mode);
 	
-	std::string getInternalAcqMode();
-	void setInternalAcqMode(std::string mode);
-
-
 	void getImageSize(Size& size);	
 	void setImageType(ImageType type);
 	void getImageType(ImageType& type);
 	
-	void setBin(const Bin& bin);
-	void getBin(Bin& bin);
-	void checkBin(Bin& bin);
-
-	void checkRoi(const Roi& set_roi, Roi& hw_roi);
-	void setRoi(const Roi& set_roi);
-	void getRoi(Roi& hw_roi);   
-
 private:
 	class CameraThread: public CmdThread
 	{
@@ -101,7 +103,7 @@ private:
 
 		virtual void start();
 		bool m_force_stop;
-		short m_shFrameErrorCode;
+		FrameStatusCode m_shFrameErrorCode;
 
 	protected:
 		virtual void init();
@@ -114,26 +116,10 @@ private:
 	};
 	friend class CameraThread;
 	
-	/* Related to API PvCam */
-	int short m_handle; 
-	char m_name[128];
 	double m_exposure;
-
-	char m_error_msg[200];
-	int m_error_code;
 	int m_nb_frames;
 
-	unsigned short m_roi_s1;
-	unsigned short m_roi_s2;
-	unsigned short m_roi_sbin;
-	unsigned short m_roi_p1;
-	unsigned short m_roi_p2;
-	unsigned short m_roi_pbin;
-	
-	
         Size m_size;
-	int m_shutter_mode;
-	int m_int_acq_mode;
 	
 	int *m_frame;
 	short *m_sframe;
@@ -145,7 +131,7 @@ private:
 	
 	/* main acquisition thread*/
 	CameraThread 	m_thread;
-	int 			m_acq_frame_nb;
+	int 		m_acq_frame_nb;
 	
 };
 }
