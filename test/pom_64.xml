@@ -19,6 +19,9 @@
 		<!-- path to the 64 bits libs -->
         <libs-64bits>/home/informatique/ica/ica/LIB_EL6_64</libs-64bits>
         <libs-lambda>../../../camera/lambda/sdk/bin</libs-lambda>           
+
+        <YAT.version>1.17.5</YAT.version> 
+        <NexusCPP.version>3.3.6</NexusCPP.version> 
 	</properties>
         
     <dependencies>    
@@ -41,26 +44,36 @@
             <artifactId>freehep-nar-plugin</artifactId>
             <configuration>
                <cpp>
-                   <sourceDirectory>src</sourceDirectory>
+                   <sourceDirectory>${project.basedir}</sourceDirectory>
                    <includePaths>
                         <includePath>src</includePath>      
                         <includePath>${libs-64bits}/gsl-1.11/include</includePath>     
                         <includePath>${libs-64bits}/hdf5-1.8.16/include</includePath>
-                        <includePath>${libs-64bits}/nexuscpp-3.3.5/include</includePath>
+                        <includePath>${libs-64bits}/nexuscpp-${NexusCPP.version}/include</includePath>
                         <includePath>${libs-64bits}/lz4-r131/lib</includePath> 
-                        <includePath>${libs-64bits}/yat-1.17.2/include</includePath>
+                        <includePath>${libs-64bits}/yat-${YAT.version}/include</includePath>
                     </includePaths>
-                   <defines>     
+                   <defines>    
+                        <define>__LINUX__</define>
+                        <define>linux</define>       
                    </defines>       
                </cpp>
                <linker>
                     <libs>
                         <lib>
                             <!-- YAT 64 -->
-                            <name>YAT-amd64-Linux-gcc-shared-release-1.17.2</name>
+                            <name>YAT-amd64-Linux-gcc-shared-release-${YAT.version}</name>
                             <type>shared</type>
-                            <directory>${libs-64bits}/yat-1.17.2/lib</directory>
+                            <directory>${libs-64bits}/yat-${YAT.version}/lib</directory>
                         </lib>
+                        
+                        <lib>
+                            <!-- NexusCPP 64 -->
+                            <name>NexusCPP-amd64-Linux-gcc-shared-release-${NexusCPP.version}</name>
+                            <type>shared</type>
+                            <directory>${libs-64bits}/nexuscpp-${NexusCPP.version}/lib</directory>
+                        </lib>   
+                            
                         <lib>
                             <!-- hdf5 (1.8.16) 64 -->
                             <name>hdf5</name>
