@@ -2,7 +2,7 @@
 #define LAMBDASYNCCTRLOBJ_H
 
 #include "lima/Debug.h"
-#include "Lambda.h"
+#include "LambdaInclude.h"
 #include "lima/HwSyncCtrlObj.h"
 #include "lima/HwInterface.h"
 

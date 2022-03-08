@@ -2,7 +2,7 @@
 #define LAMBDACAMERA_H
 
 #include "lima/Debug.h"
-#include "Lambda.h"
+#include "LambdaInclude.h"
 #include "lima/Constants.h"
 #include "lima/HwBufferMgr.h"
 #include "lima/ThreadUtils.h"
