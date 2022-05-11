@@ -10,14 +10,15 @@
 #include <memory>
 #include <cstdint>
 #include <functional>
+#include <stdexcept>
 
 
 namespace xsp {
 
 
-#define LIBXSP_VERSION_MAJOR 1
-#define LIBXSP_VERSION_MINOR 3
-#define LIBXSP_VERSION_PATCH 2
+#define LIBXSP_VERSION_MAJOR 2
+#define LIBXSP_VERSION_MINOR 0
+#define LIBXSP_VERSION_PATCH 3
 
 extern std::string libraryVersion();
 extern int libraryMajor();
@@ -31,6 +32,9 @@ enum class LogLevel {
     INFO = 2,
     DEBUG = 3
 };
+
+extern std::string toString(const LogLevel& l);
+extern std::ostream& operator<<(std::ostream& os, const LogLevel& l);
 
 extern void setLogHandler(const std::function<void(LogLevel, const std::string&)>& handler);
 extern void clearLogHandler();
@@ -61,30 +65,30 @@ extern std::string toString(const StatusCode& code);
 extern std::ostream& operator<<(std::ostream& os, const StatusCode& code);
 
 
-class Exception : public std::runtime_error
+class Error : public std::runtime_error
 {
 public:
-    explicit Exception(const std::string& msg) : std::runtime_error(msg) {}
-    ~Exception() noexcept override = default;
-    Exception(const Exception&) = default;
+    explicit Error(const std::string& msg) : std::runtime_error(msg) {}
+    ~Error() noexcept override = default;
+    Error(const Error&) = default;
 
     const char* what() const noexcept override { return std::runtime_error::what(); }
 };
 
 
-class ConfigError : public Exception
+class ConfigError : public Error
 {
 public:
-    explicit ConfigError(const std::string& msg) : Exception(msg) {}
+    explicit ConfigError(const std::string& msg) : Error(msg) {}
     ~ConfigError() noexcept override = default;
     ConfigError(const ConfigError&) = default;
 };
 
 
-class RuntimeError : public Exception
+class RuntimeError : public Error
 {
 public:
-    explicit RuntimeError(const std::string& msg, StatusCode code) : status_code(code), Exception(msg) {}
+    explicit RuntimeError(const std::string& msg, StatusCode code) : Error(msg), status_code(code) {}
     ~RuntimeError() noexcept override = default;
     RuntimeError(const RuntimeError&) = default;
 
@@ -120,12 +124,6 @@ enum class ShuffleMode
 };
 
 
-enum class Interpolation {
-    OFF,
-    ON
-};
-
-
 struct Position {
     double x;
     double y;
@@ -144,7 +142,11 @@ class Frame
 {
 public:
     virtual ~Frame() = default;
+
     virtual std::uint64_t nr() const = 0;
+    virtual int subframe() const = 0;
+    virtual int connector() const = 0;
+    virtual std::uint64_t seq() const = 0;
     virtual std::uint64_t trigger() const = 0;
     virtual FrameStatusCode status() const = 0;
     virtual const std::uint8_t* data() const = 0;
@@ -156,30 +158,43 @@ class Detector
 {
 public:
     virtual ~Detector() = default;
+
+    // general infos
     virtual std::string id() const = 0;
     virtual std::string type() const = 0;
+    virtual std::string userData(const std::string& key) const = 0;
+
+    // event handling
+    virtual void setEventHandler(const std::function<void(EventType, const void *)>& handler) = 0;
+    virtual void clearEventHandler() = 0;
+
+    // commands
     virtual void connect() = 0;
     virtual void disconnect() = 0;
     virtual void initialize() = 0;
+    virtual void reset() = 0;
+    virtual void startAcquisition() = 0;
+    virtual void stopAcquisition() = 0;
+
+    // status
     virtual bool isConnected() const = 0;
     virtual bool isReady() const = 0;
     virtual bool isBusy() const = 0;
-    virtual void setEventHandler(const std::function<void(EventType, const void *)>& handler) = 0;
-    virtual void clearEventHandler() = 0;
-    virtual std::string userData(const std::string& key) const = 0;
+
+    // acquisition parameters
     virtual std::uint64_t frameCount() const = 0;
     virtual void setFrameCount(std::uint64_t count) = 0;
     virtual double shutterTime() const = 0;
     virtual void setShutterTime(double time_ms) = 0;
-    virtual void reset() = 0;
-    virtual void startAcquisition() = 0;
-    virtual void stopAcquisition() = 0;
+
+    // live frames
     virtual int liveFrameWidth() const = 0;
     virtual int liveFrameHeight() const = 0;
     virtual int liveFrameDepth() const = 0;
     virtual int liveFramesQueued() const = 0;
+    virtual void liveFrameSelect(int subframe, int connector) = 0;
     virtual const Frame* liveFrame(int timeout_ms) = 0;
-    virtual void release(std::uint64_t nr) = 0;
+    virtual void release(const Frame* f) = 0;
 };
 
 
@@ -187,39 +202,34 @@ class Receiver
 {
 public:
     virtual ~Receiver() = default;
+
+    // general infos
     virtual std::string id() const = 0;
     virtual std::string type() const = 0;
+    virtual std::string userData(const std::string& key) const = 0;
+    virtual bool ramAllocated() const = 0;
+
+    // event handling
+    virtual void setEventHandler(const std::function<void(EventType, const void *)>& handler) = 0;
+    virtual void clearEventHandler() = 0;
+
+    // commands
     virtual void connect() = 0;
     virtual void disconnect() = 0;
     virtual void initialize() = 0;
+
+    // status
     virtual bool isConnected() const = 0;
     virtual bool isReady() const = 0;
     virtual bool isBusy() const = 0;
-    virtual void setEventHandler(const std::function<void(EventType, const void *)>& handler) = 0;
-    virtual void clearEventHandler() = 0;
-    virtual std::string userData(const std::string& key) const = 0;
-    virtual bool pixelMaskApplied() const = 0;
-    virtual const std::vector<std::uint32_t>& pixelMask() const = 0;
-    virtual bool flatFieldApplied() const = 0;
-    virtual const std::vector<double>& flatField() const = 0;
-    virtual const std::vector<double>& flatFieldError() const = 0;
-    virtual Position position() const = 0;
-    virtual Rotation rotation() const = 0;
-    virtual std::string compressor() const = 0;
-    virtual int compressionLevel() const = 0;
-    virtual void setCompressionLevel(int level) = 0;
-    virtual ShuffleMode shuffleMode() const = 0;
-    virtual void setShuffleMode(ShuffleMode mode) = 0;
-    virtual Interpolation interpolation() const = 0;
-    virtual void setInterpolation(Interpolation i) = 0;
-    virtual int ramBufferSizeToFrames() const = 0;
 
+    // acquired data
     virtual int frameWidth() const = 0;
     virtual int frameHeight() const = 0;
     virtual int frameDepth() const = 0;
     virtual int framesQueued() const = 0;
     virtual const Frame* frame(int timeout_ms) = 0;
-    virtual void release(std::uint64_t nr) = 0;
+    virtual void release(const Frame* f) = 0;
 };
 
 
@@ -227,20 +237,26 @@ class System
 {
 public:
     virtual ~System() = default;
+
+    // general infos
     virtual std::string id() const = 0;
     virtual std::vector<std::string> detectorIds() const = 0;
-    virtual std::vector<std::string> receiverIds() const = 0;
+    virtual std::vector<std::string> receiverIds(const std::string& detector="") const = 0;
     virtual std::shared_ptr<Detector> detector(const std::string& id) const = 0;
     virtual std::shared_ptr<Receiver> receiver(const std::string& id) const = 0;
+
+    // commands
     virtual void connect() = 0;
     virtual void disconnect() = 0;
     virtual void initialize() = 0;
-    virtual bool isConnected() const = 0;
-    virtual bool isReady() const = 0;
-    virtual bool isBusy() const = 0;
     virtual void reset() = 0;
     virtual void startAcquisition() = 0;
     virtual void stopAcquisition() = 0;
+
+    // status
+    virtual bool isConnected() const = 0;
+    virtual bool isReady() const = 0;
+    virtual bool isBusy() const = 0;
 };
 
 std::unique_ptr<System> createSystem(const std::string& config_file);
@@ -293,6 +309,18 @@ enum class Gating {
 };
 
 
+enum class Counter {
+    COUNTER_L,
+    COUNTER_H
+};
+
+
+enum class Threshold {
+    LOWER = 0,
+    UPPER = 1
+};
+
+
 struct OperationMode {
 
     OperationMode() = default;
@@ -311,36 +339,178 @@ struct OperationMode {
 };
 
 
+enum class ModuleFlag : unsigned int {
+    IGNORE_ERRORS = 1 << 0
+};
+
+inline auto operator~ (ModuleFlag op) {
+    using FT =  std::underlying_type<ModuleFlag>;
+    return ~static_cast<FT::type>(op);
+}
+
+template <typename T>
+inline T operator& (T lhs, ModuleFlag rhs) {
+    using FT =  std::underlying_type<ModuleFlag>;
+    return lhs & static_cast<FT::type>(rhs);
+}
+
+inline ModuleFlag operator| (ModuleFlag lhs, ModuleFlag rhs) {
+    using FT =  std::underlying_type<ModuleFlag>;
+    return static_cast<ModuleFlag>(static_cast<FT::type>(lhs) | static_cast<FT::type>(rhs));
+}
+
+template <typename T>
+inline T& operator|= (T& lhs, ModuleFlag rhs) {
+    using FT =  std::underlying_type<ModuleFlag>;
+    return lhs = lhs | static_cast<FT::type>(rhs);
+}
+
+template <typename T>
+inline T& operator&= (T& lhs, ModuleFlag rhs) {
+    using FT =  std::underlying_type<ModuleFlag>;
+    return lhs = lhs | static_cast<FT::type>(rhs);
+}
+
+
 class Detector : virtual public xsp::Detector
 {
 public:
     virtual ~Detector() = default;
+
+    // general infos
     virtual int numberOfModules() const = 0;
+    virtual std::string firmwareVersion(int module_nr) const = 0;
+    virtual bool hasFeature(int module_nr, Feature f) const = 0;
+    virtual void enableModuleFlag(int module_nr, ModuleFlag flag) = 0;
+    virtual void disableModuleFlag(int module_nr, ModuleFlag flag) = 0;
+    virtual bool moduleFlagEnabled(int module_nr, ModuleFlag flag) const = 0;
+    virtual std::vector<std::string> chipIds(int module_nr) const = 0;
+    virtual double voltage(int module_nr) const = 0;
+    virtual bool voltageSettled(int module_nr) const = 0;
+    virtual std::vector<double> temperature(int module_nr) const = 0;
+    virtual double sensorCurrent(int module_nr) const = 0;
+    virtual double humidity(int module_nr) const = 0;
+
+    // status
     virtual bool isModuleConnected(int module_nr) const = 0;
     virtual bool isModuleReady(int module_nr) const = 0;
     virtual bool isModuleBusy(int module_nr) const = 0;
-    virtual std::string firmwareVersion(int module_nr) const = 0;
-    virtual bool hasFeature(int module_nr, Feature f) const = 0;
-    virtual std::vector<std::string> chipIds(int module_nr) const = 0;
+
+    // decoding settings
+    virtual void enableSaturationFlag() = 0;
+    virtual void disableSaturationFlag() = 0;
+    virtual bool saturationFlagEnabled() const = 0;
+    virtual int saturationThreshold(int module_nr) const = 0;
+    virtual void setSaturationThreshold(int module_nr, int n) = 0;
+    virtual const std::vector<int> saturationThresholdPerPixel(int module_nr) const = 0;
+    virtual void setSaturationThresholdPerPixel(int module_nr, const std::vector<int>& v) = 0;
+    virtual void enableCountrateCorrection() = 0;
+    virtual void disableCountrateCorrection() = 0;
+    virtual bool countrateCorrectionEnabled() const = 0;
+    virtual void enableFlatfield() = 0;
+    virtual void disableFlatfield() = 0;
+    virtual bool flatfieldEnabled() const = 0;
+    virtual void enableInterpolation() = 0;
+    virtual void disableInterpolation() = 0;
+    virtual bool interpolationEnabled() const = 0;
+
+    // acquisition parameters
+    virtual BitDepth bitDepth() const = 0;
+    virtual void setBitDepth(BitDepth depth) = 0;
+    virtual ChargeSumming chargeSumming() const = 0;
+    virtual void setChargeSumming(ChargeSumming cs) = 0;
+    virtual CounterMode counterMode() const = 0;
+    virtual void setCounterMode(CounterMode cm) = 0;
     virtual OperationMode operationMode() const = 0;
     virtual void setOperationMode(const OperationMode& mode) = 0;
     virtual std::vector<double> thresholds() const = 0;
     virtual void setThresholds(const std::vector<double>& thresholds_kev) = 0;
+    virtual double beamEnergy() const = 0;
+    virtual void setBeamEnergy(double e_kev) = 0;
     virtual TrigMode  triggerMode() const = 0;
     virtual void setTriggerMode(TrigMode mode) = 0;
     virtual int framesPerTrigger() const = 0;
     virtual void setFramesPerTrigger(int n) = 0;
     virtual Gating  gatingMode() const = 0;
     virtual void setGatingMode(Gating mode) = 0;
-    [[deprecated]] virtual int ioDelay(int module_nr) const = 0;
-    [[deprecated]] virtual void setIoDelay(int module_nr, int taps) = 0;
-    virtual double voltage(int module_nr) const = 0;
+    virtual int roiRows() const = 0;
+    virtual void setRoiRows(int rows) = 0;
+
+    // for test and calibration only
+    virtual std::vector<int> chipNumbers(int module_nr) const = 0;
+    virtual std::vector<std::uint8_t> ioDelay(int module_nr) const = 0;
+    virtual std::vector<std::uint8_t> ioDelay(int module_nr, int chip_nr) const = 0;
+    virtual void setIoDelay(int module_nr, const std::vector<std::uint8_t>& values) = 0;
+    virtual void setIoDelay(int module_nr, int chip_nr, const std::vector<std::uint8_t>& values) = 0;
     virtual void setVoltage(int module_nr, double voltage) = 0;
-    virtual std::vector<double> temperature(int module_nr) const = 0;
-    virtual double sensorCurrent(int module_nr) const = 0;
-    virtual double humidity(int module_nr) const = 0;
+    virtual std::vector<unsigned> rawThresholds(int module_nr, int chip_nr) const = 0;
+    virtual void setRawThresholds(int module_nr, int chip_nr, const std::vector<unsigned>& thresholds_9bit) = 0;
+    virtual std::vector<std::uint8_t> dacDisc(int module_nr, int chip_nr) const = 0;
+    virtual void setDacDisc(int module_nr, int chip_nr, std::vector<std::uint8_t> values) = 0;
+    virtual std::vector<std::uint8_t> pixelMaskBit(int module_nr, int chip_nr) const = 0;
+    virtual void setPixelMaskBit(int module_nr, int chip_nr, const std::vector<std::uint8_t>& values) = 0;
+    virtual std::vector<std::uint8_t> pixelTestBit(int module_nr, int chip_nr) const = 0;
+    virtual void setPixelTestBit(int module_nr, int chip_nr, const std::vector<std::uint8_t>& values) = 0;
+    virtual std::vector<std::uint8_t> pixelDiscL(int module_nr, int chip_nr) const = 0;
+    virtual void setPixelDiscL(int module_nr, int chip_nr, const std::vector<std::uint8_t>& values) = 0;
+    virtual std::vector<std::uint8_t> pixelDiscH(int module_nr, int chip_nr) const = 0;
+    virtual void setPixelDiscH(int module_nr, int chip_nr, const std::vector<std::uint8_t>& values) = 0;
     virtual double dacOut(int module_nr, int chip_nr) const = 0;
     virtual void setDacIn(int module_nr, int chip_nr, double voltage) = 0;
+    virtual void loadTestPattern(const std::vector<std::uint16_t>& pattern) = 0;
+    virtual void readTestPattern() = 0;
+    virtual void enableTestMode() = 0;
+    virtual void disableTestMode() = 0;
+    virtual bool testModeEnabled() const = 0;
+    virtual void enableLookup() = 0;
+    virtual void disableLookup() = 0;
+    virtual bool lookupEnabled() const = 0;
+    virtual void enableEqualization() = 0;
+    virtual void disableEqualization() = 0;
+    virtual bool equalizationEnabled() const = 0;
+    virtual void selectDiscL() = 0;
+    virtual void selectDiscH() = 0;
+};
+
+class Receiver : virtual public xsp::Receiver
+{
+public:
+    virtual ~Receiver() = default;
+
+    // general infos
+    virtual Position position() const = 0;
+    virtual Rotation rotation() const = 0;
+    virtual int maxFrames() const = 0;
+
+    // decoding settings
+    virtual int numberOfSubFrames() const = 0;
+    virtual int numberOfConnectedSensors() const = 0;
+    virtual bool pixelMaskEnabled() const = 0;
+    virtual const std::vector<std::uint32_t>& pixelMask() const = 0;
+    virtual bool saturationFlagEnabled() const = 0;
+    virtual int saturationThreshold() const = 0;
+    virtual const std::vector<int>& saturationThresholdPerPixel() const = 0;
+    virtual bool countrateCorrectionEnabled() const = 0;
+    virtual bool flatfieldEnabled() const = 0;
+    virtual const std::vector<double>& flatfield(Threshold th) const = 0;
+    virtual const std::vector<double>& flatfieldError(Threshold th) const = 0;
+    virtual std::string flatfieldTimestamp(Threshold th) const = 0;
+    virtual std::string flatfieldAuthor(Threshold th) const = 0;
+    virtual bool interpolationEnabled() const = 0;
+    virtual std::string compressor() const = 0;
+    virtual bool compressionEnabled() const = 0;
+    virtual int compressionLevel() const = 0;
+    virtual void setCompressionLevel(int level) = 0;
+    virtual ShuffleMode shuffleMode() const = 0;
+    virtual void setShuffleMode(ShuffleMode mode) = 0;
+
+    // acquisition parameters
+    virtual double threshold(Threshold th) const = 0;
+    virtual double beamEnergy() const = 0;
+
+    // for testing only
+    virtual bool testModeEnabled() const = 0;
+    virtual bool lookupEnabled() const = 0;
 };
 
 } // namespace lambda

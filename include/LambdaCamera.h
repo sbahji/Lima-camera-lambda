@@ -66,6 +66,9 @@ public:
 	void getTemperature(double &temperature);
 	void getDistortionCorrection(bool &is_on);
 	void getHumidity(double &percent);
+	bool hasFeature(xsp::lambda::Feature feature);
+	void getLibVersion(std::string &libVersion);
+
 	void getHighVoltage(double &voltage);
 	void setHighVoltage(double voltage);
 
