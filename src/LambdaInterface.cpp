@@ -27,10 +27,6 @@ Interface::Interface(Camera& cam) :
 	m_cap_list.push_back(HwCap(m_bufferCtrlObj));
 	m_cap_list.push_back(HwCap(m_sync));
 
-    //event capability
-    m_event = cam.getEventCtrlObj();    
-    m_cap_list.push_back(HwCap(m_event));
-
 	Size image_size;
 	m_det_info->getMaxImageSize(image_size);
 	ImageType image_type;
