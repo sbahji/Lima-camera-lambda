@@ -1,3 +1,4 @@
 build/
 tango/build/
 /target/
+/test/testLima/target/
