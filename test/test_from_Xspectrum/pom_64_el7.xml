@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>fr.soleil</groupId>
+        <artifactId>super-pom-C-CPP-device</artifactId>
+        <version>21.2.5-64-el7</version>
+    </parent>
+  
+    <groupId>fr.soleil.device</groupId>
+    <artifactId>TestLambdaLoop-amd64-Linux-gcc-shared-${mode}</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+  
+    <packaging>nar</packaging>
+    <name>TestLambdaLoop</name>
+    <description>TestLambdaLoop main</description>
+    
+    <properties>
+		<!-- path to the 64 bits libs -->
+        <libs-64bits>/home/informatique/ica/ica/LIB_EL7_64</libs-64bits>
+        <libs-lambda>../../../camera/lambda/sdk/bin</libs-lambda>            
+	</properties>
+        
+    <!-- <dependencies>    
+		<dependency>
+			<groupId>fr.soleil.lib</groupId>
+			<artifactId>LimaCore-amd64-Linux-gcc-shared-${mode}</artifactId>
+			<version>1.7.9</version>
+		</dependency>
+		<dependency>
+			<groupId>fr.soleil.lib.Lima.Camera</groupId>
+			<artifactId>LimaLambda-amd64-Linux-gcc-shared-${mode}</artifactId>
+			<version>1.0.3</version>
+		</dependency>
+    </dependencies> -->
+    
+    <build>
+        <plugins>
+          <plugin>
+            <groupId>org.freehep</groupId>
+            <artifactId>freehep-nar-plugin</artifactId>
+            <configuration>
+               <cpp>
+                   <sourceDirectory>src</sourceDirectory>
+                   <includePaths>
+                        <includePath>../../sdk/include/</includePath>
+                    </includePaths>
+                   <defines>    
+                        <define>__LINUX__</define>
+                        <define>linux</define>       
+                   </defines>       
+               </cpp>
+               <linker>
+					<libs>
+						<lib>
+							<!-- xsp -->
+							<name>xsp</name>
+							<type>shared</type>
+							<directory>../../sdk/bin/</directory>
+						</lib>
+					</libs>
+                </linker>
+            </configuration>
+          </plugin>		
+        </plugins>
+	</build>
+ 
+    <developers>
+        <developer>
+          <id>langlois</id>
+          <name>langlois</name>
+          <url>http://controle/</url>
+          <organization>Synchrotron Soleil</organization>
+          <organizationUrl>http://www.synchrotron-soleil.fr</organizationUrl>
+          <roles>
+            <role>developer</role>
+          </roles>
+          <timezone>1</timezone>
+        </developer>
+    </developers>
+</project>
