@@ -17,8 +17,8 @@ namespace xsp {
 
 
 #define LIBXSP_VERSION_MAJOR 2
-#define LIBXSP_VERSION_MINOR 0
-#define LIBXSP_VERSION_PATCH 3
+#define LIBXSP_VERSION_MINOR 1
+#define LIBXSP_VERSION_PATCH 0
 
 extern std::string libraryVersion();
 extern int libraryMajor();
@@ -233,6 +233,50 @@ public:
 };
 
 
+class PostDecoder
+{
+public:
+    virtual ~PostDecoder() = default;
+
+    // general infos
+    virtual std::string id() const = 0;
+
+    // event handling
+    virtual void setEventHandler(const std::function<void(EventType, const void *)>& handler) = 0;
+    virtual void clearEventHandler() = 0;
+
+    // status
+    virtual bool isReady() const = 0;
+    virtual bool isBusy() const = 0;
+
+    // commands
+    virtual void initialize() = 0;
+
+    // compression info
+    virtual std::string compressor() const = 0;
+    virtual bool compressionEnabled() const = 0;
+    virtual int compressionLevel() const = 0;
+    virtual ShuffleMode shuffleMode() const = 0;
+    virtual void setCompressionLevel(int level) = 0;
+    virtual void setShuffleMode(ShuffleMode mode) = 0;
+
+    // frame summing
+    virtual bool frameSummingEnabled() const = 0;
+    virtual unsigned int summedFrames() const = 0;
+    virtual void setSummedFrames(unsigned int n_frames) = 0;
+
+    // processed data
+    virtual int numberOfSubFrames() const = 0;
+    virtual int numberOfConnectedSensors() const = 0;
+    virtual int frameWidth() const = 0;
+    virtual int frameHeight() const = 0;
+    virtual int frameDepth() const = 0;
+    virtual int framesQueued() const = 0;
+    virtual const Frame* frame(int timeout_ms) = 0;
+    virtual void release(const Frame* f) = 0;
+
+};
+
 class System
 {
 public:
@@ -257,6 +301,11 @@ public:
     virtual bool isConnected() const = 0;
     virtual bool isReady() const = 0;
     virtual bool isBusy() const = 0;
+
+    //TODO: move methods on next major release
+    virtual std::vector<std::string> postDecoderIds() const = 0;
+    virtual std::shared_ptr<PostDecoder> postDecoder(const std::string& id) const = 0;
+
 };
 
 std::unique_ptr<System> createSystem(const std::string& config_file);
