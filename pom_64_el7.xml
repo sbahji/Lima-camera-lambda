@@ -22,8 +22,8 @@
     </scm>
 	
 	<properties>
-		<!-- path to the 64 bits libs ${libs-64bits} -->
-        <libs-64bits>/home/informatique/ica/ica/LIB_EL6_64</libs-64bits>
+		<!-- path to the el7 64 bits libs -->
+        <libs-64bits>/home/informatique/ica/ica/LIB_EL7_64</libs-64bits>
 	</properties>
 
     <profiles>
@@ -61,7 +61,6 @@
                             <option>-w</option>
                         </options>
 						<defines>
-                            <!--<define>SIMULATOR</define>-->
                         </defines>
                     </cpp>
                     <linker>

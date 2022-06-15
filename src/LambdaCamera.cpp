@@ -7,7 +7,6 @@
 
 #include "lima/Exceptions.h"
 
-
 #include "LambdaCamera.h"
 
 using namespace lima;
@@ -24,7 +23,6 @@ Camera::CameraThread::CameraThread(Camera& cam)
 	DEB_TRACE() << "CameraThread::CameraThread - BEGIN";
 	m_cam->m_acq_frame_nb = 0;
 	m_force_stop = false;
-	m_shFrameErrorCode = FrameStatusCode::FRAME_OK;
 	DEB_TRACE() << "CameraThread::CameraThread - END";
 }
 
@@ -62,13 +60,14 @@ void Camera::CameraThread::execCmd(int cmd)
 	switch (cmd)
 	{
 	case StartAcq:
-	  if (status != Ready)
-	    throw LIMA_HW_EXC(InvalidValue, "Not Ready to StartAcq");
-	  execStartAcq();
-	  break;
+		if (status != Ready)
+	    	throw LIMA_HW_EXC(InvalidValue, "Not Ready to StartAcq");
+	  	execStartAcq();
+	  	break;
 	case StopAcq:
-	  setStatus(Ready);
-	  break;
+		m_cam->detector->stopAcquisition();
+	  	setStatus(Ready);
+	  	break;
 	}
 	DEB_TRACE() << "CameraThread::execCmd - END";
 }
@@ -78,104 +77,58 @@ void Camera::CameraThread::execCmd(int cmd)
 //---------------------------------------------------------------------------------------
 void Camera::CameraThread::execStartAcq()
 {
+	DEB_MEMBER_FUNCT();
+	DEB_TRACE() << "CameraThread::execStartAcq - BEGIN";
+	setStatus(Exposure);
 	
-  DEB_MEMBER_FUNCT();
-  DEB_TRACE() << "CameraThread::execStartAcq - BEGIN";
-  setStatus(Exposure);
-  
-  StdBufferCbMgr& buffer_mgr = m_cam->m_bufferCtrlObj.getBuffer();
-  buffer_mgr.setStartTimestamp(Timestamp::now());
-  
-  
-  
-  int acq_frame_nb;
-  int nb_frames = m_cam->m_nb_frames;
-    
-  // start acquisition
-  m_cam->detector->startAcquisition();
-  
-  m_cam->m_acq_frame_nb = 0;
-  acq_frame_nb = 0;
+	StdBufferCbMgr& buffer_mgr = m_cam->m_bufferCtrlObj.getBuffer();
+	buffer_mgr.setStartTimestamp(Timestamp::now());
+	
+	int acq_frame_nb;
+	int nb_frames = m_cam->m_nb_frames;
+		
+	// start acquisition
+	DEB_TRACE() << "Starting Acquisition...";
+	m_cam->detector->startAcquisition();
+	DEB_TRACE() << "Acquisition Started";
+	
+	m_cam->m_acq_frame_nb = 0;
+	acq_frame_nb = 0;
 
-  bool continueAcq = true;
-  while(continueAcq && (!m_cam->m_nb_frames || m_cam->m_acq_frame_nb < m_cam->m_nb_frames)){
-		if(m_cam->receiver->framesQueued()>0){
+	bool continueAcq = true;
+	while(continueAcq && (!m_cam->m_nb_frames || m_cam->m_acq_frame_nb < m_cam->m_nb_frames))
+	{
+	  	if(m_cam->receiver->framesQueued() > 0)
+		{
 			const Frame* frame;
-			
-			bool bValid;
-			int nDataLength;
-			int m_nSizeX;
-			int m_nSizeY;
-			int m_nDepth;
+
+			int nDepth;
 			int m_nDataType;
-			int lambda_frame_nb;
-			ImageType image_type;
-			
-			if(m_cam->m_bBuildInCompressor){
-				frame =  m_cam->receiver->frame(1500);
-				if (frame != nullptr) {
-					acq_frame_nb = frame->nr();
-					m_shFrameErrorCode = frame->status();
-					auto ptrch_data = reinterpret_cast<const uint8_t*>(frame->data());
-					nDataLength = frame->size();
-					// process frame data, i.e. copy using memcpy(<dest>, frame_data, frame_size);
-					m_cam->receiver->release(frame);
-				}
-			} else {  //decoded image,without pre-compression
-				m_nSizeX = m_cam->receiver->frameWidth();
-				m_nSizeY = m_cam->receiver->frameHeight();
-				m_nDepth = m_cam->receiver->frameDepth();
-			
-				if(m_nDepth == 12)
+
+			nDepth = m_cam->receiver->frameDepth();
+		
+			if(nDepth == 12)
 				m_nDataType = 1; //short
-				else if(m_nDepth == 24)
+			else if(nDepth == 24)
 				m_nDataType = 2; //int
 
-				m_cam->getImageType(image_type);
-				FrameDim frame_dim( m_nSizeX, m_nSizeY, image_type);
-				
-				if(m_nDataType == 1){ // short
-					int not_correct_frame = 1;
-					while(not_correct_frame){
-						frame =  m_cam->receiver->frame(1500);
-						if (frame != nullptr) {
-							lambda_frame_nb = frame->nr();
-							m_shFrameErrorCode= frame->status();
-							auto ptrsh_data = reinterpret_cast<const uint16_t*>(frame->data());
-							// process frame data
-							
-							DEB_TRACE() << "Prepare the Frame ptr - " << DEB_VAR1(acq_frame_nb);
-							setStatus(Readout);
-							
-							if(lambda_frame_nb == acq_frame_nb + 1){
-								DEB_TRACE() << "copy data into the Frame ptr - " << DEB_VAR1(m_nSizeX*m_nSizeY);
-								m_cam->m_sframe = (short*) ptrsh_data;
-								void *ptr = buffer_mgr.getFrameBufferPtr(acq_frame_nb);
-								memcpy((short *)ptr, (short *)m_cam->m_sframe, frame_dim.getMemSize()); //we need a nb of BYTES .
-								not_correct_frame = 0;
-							}
-							m_cam->receiver->release(frame);
-						}		
-					}
-				} else if(m_nDataType == 2){ // int
-					frame =  m_cam->receiver->frame(1500);
-					if (frame != nullptr) {
-						lambda_frame_nb = frame->nr();
-						m_shFrameErrorCode= frame->status();
-						auto ptrn_data = reinterpret_cast<const uint16_t*>(frame->data());
-						// process frame data
-						
-						DEB_TRACE() << "Prepare the Frame ptr - " << DEB_VAR1(acq_frame_nb);
-						setStatus(Readout);
-						DEB_TRACE() << "copy data into the Frame ptr - " << DEB_VAR1(m_nSizeX*m_nSizeY);
-						m_cam->m_frame = (int*) ptrn_data;
-						void *ptr = buffer_mgr.getFrameBufferPtr(acq_frame_nb);
-						memcpy((int *)ptr, (int *)m_cam->m_frame, frame_dim.getMemSize()); //we need a nb of BYTES .
-						m_cam->receiver->release(frame);
-					}
-				}
+			//- get the Frame
+			frame =  m_cam->receiver->frame(1500);
+			if (frame != nullptr)
+			{	
+				DEB_TRACE() << "Prepare the Frame ptr - " << DEB_VAR1(acq_frame_nb);
+				setStatus(Readout);
+		
+				void *ptr = buffer_mgr.getFrameBufferPtr(acq_frame_nb);
 
+				if(m_nDataType == 1) // short (12 bits)
+					memcpy((short*)ptr, frame->data(), frame->size()); //we need a nb of BYTES .
+				else if(m_nDataType == 2) // int (24 bits)
+					memcpy((int*)ptr, frame->data(), frame->size()); //we need a nb of BYTES .
+				
+				m_cam->receiver->release(frame);
 			}
+
 			buffer_mgr.setStartTimestamp(Timestamp::now());
 			
 			DEB_TRACE() << "Declare a new Frame Ready.";
@@ -185,16 +138,15 @@ void Camera::CameraThread::execStartAcq()
 			
 			acq_frame_nb++;
 			m_cam->m_acq_frame_nb = acq_frame_nb;
-			
 		}
 
-		if(m_force_stop){
+		if(m_force_stop)
+		{
 			continueAcq = false;
 			m_force_stop = false;
 			break;
     	}
   } /* End while */
-  
   
   // stop acquisition
   m_cam->detector->stopAcquisition();
@@ -204,45 +156,51 @@ void Camera::CameraThread::execStartAcq()
   DEB_TRACE() << "CameraThread::execStartAcq - END";
 }
 
-
 //---------------------------------------------------------------------------------------
 //! Camera::Camera()
 //---------------------------------------------------------------------------------------
-Camera::Camera(std::string& config_path):
-m_thread(*this),
-m_nb_frames(1),
-m_exposure(1.0),
-m_bufferCtrlObj()
+Camera::Camera(std::string& config_file):
+										m_thread(*this),
+										m_config_file(config_file),
+										m_nb_frames(1),
+										m_exposure(1.0),
+										m_bufferCtrlObj()
 {
 	DEB_CONSTRUCTOR();
 	DEB_TRACE() << "Camera::Camera";
-	m_bBuildInCompressor = false;
-
-	libxsp_system = createSystem(config_path);
-	if (libxsp_system == nullptr) {
+	
+	libxsp_system = createSystem(config_file);
+	if (libxsp_system == nullptr)
+	{
 		THROW_HW_ERROR(Error) << "No system created. Aborting ...";
 	}
-	try {
-	libxsp_system->connect();
-	libxsp_system->initialize();
+
+	try
+	{
+		libxsp_system->connect();
+		libxsp_system->initialize();
 	}
-	catch (const RuntimeError& e){
+	catch (const RuntimeError& e)
+	{
 		THROW_HW_ERROR(Error) << "Cannot initialize detector connection, reason: \n" << e.what();
 	}
+
 	detector = std::dynamic_pointer_cast<lambda::Detector>(
 							       libxsp_system->detector("lambda")
 							       );
-	receiver = libxsp_system->receiver("lambda/1");
-	
-	int m_nSizeX;
-	int m_nSizeY;
-	int m_nDepth;
-	m_nSizeX = receiver->frameWidth();
-	m_nSizeY = receiver->frameHeight();
-	m_nDepth = receiver->frameDepth();
-	
 
-	m_size = Size(m_nSizeX,m_nSizeY);
+	//- get detector model
+	m_detector_model = "";
+	std::stringstream ss;
+	auto chip_ids = detector->chipIds(1);
+	ss << "Nb. modules " << detector->numberOfModules()
+	   <<" - Mod #1 Id "<< chip_ids[0];
+	m_detector_model = ss.str();
+
+	//receiver = libxsp_system->receiver("lambda/1");
+	receiver = libxsp_system->postDecoder("lambda"); //- work with several receivers
+	
+	m_size = Size(receiver->frameWidth(),receiver->frameHeight());
 	
 	m_thread.start();
 }
@@ -295,9 +253,12 @@ void Camera::setNbFrames(int nb_frames)
 	if (nb_frames < 0)
 		throw LIMA_HW_EXC(InvalidValue, "Invalid nb of frames");
 	  
-	if(nb_frames == 0){
-	  detector->setFrameCount(1000000);
-	} else {
+	if(nb_frames == 0)
+	{
+	  detector->setFrameCount(16777215); //- Max possible value (3 bytes integer : 24 bits)
+	} 
+	else 
+	{
 	  detector->setFrameCount(nb_frames);
 	}
 	m_nb_frames = nb_frames;
@@ -320,13 +281,7 @@ void Camera::getNbFrames(int& nb_frames)
 void Camera::getDetectorModel(std::string& model)
 {
 	DEB_MEMBER_FUNCT();
-	stringstream ss;
-	auto chip_ids = detector->chipIds(1);
-	ss << "Nb. modules " << detector->numberOfModules()
-	   <<" - Mod #1 Id "<< chip_ids[0];
-	//<<" - Firmware "<< detector->firmwareVersion(1)
-	//<<" - Liblambda "<< libraryVersion();
-	model = ss.str();
+	model = m_detector_model;
 }
 
 //---------------------------------------------------------------------------------------
@@ -343,17 +298,7 @@ int Camera::getNbAcquiredFrames()
 void Camera::prepareAcq()
 {
 	DEB_MEMBER_FUNCT();
-	int m_nSizeX;
-	int m_nSizeY;
-	int m_nDepth;
 	
-	//m_objDetSys->GetImageFormat(m_nSizeX,m_nSizeY,m_nDepth);
-
-	m_nSizeX = receiver->frameWidth();
-	m_nSizeY = receiver->frameHeight();
-	m_nDepth = receiver->frameDepth();
-	
-	m_size = Size(m_nSizeX,m_nSizeY);
 }
 
 //---------------------------------------------------------------------------------------
@@ -399,7 +344,7 @@ void Camera::getExpTime(double& exp_time)
 {
 	DEB_MEMBER_FUNCT();
 	//	AutoMutex aLock(m_cond.mutex());
-	exp_time = m_exposure / 1E3;//the lima standrad unit is second AND default detector unit is ms
+	exp_time = m_exposure / 1E3;//the lima standard unit is second AND default detector unit is ms
 	DEB_RETURN() << DEB_VAR1(exp_time);
 }
 
@@ -412,10 +357,8 @@ void Camera::setExpTime(double  exp_time)
 	DEB_TRACE() << "Camera::setExpTime - " << DEB_VAR1(exp_time);
 
 	m_exposure = exp_time * 1E3;//default detector unit is ms
-	//m_objDetSys->SetShutterTime(m_exposure);
 	detector->setShutterTime(m_exposure);
 }
-
 
 //---------------------------------------------------------------------------------------
 //! Camera::setTrigMode()
@@ -426,7 +369,8 @@ void Camera::setTrigMode(TrigMode  mode)
 	DEB_TRACE() << "Camera::setTrigMode - " << DEB_VAR1(mode);
 	DEB_PARAM() << DEB_VAR1(mode);
 
-	switch (mode) {
+	switch (mode) 
+	{
 	case IntTrig:
 	  detector->setTriggerMode(lambda::TrigMode::SOFTWARE); // Internal trigger
 	  break;
@@ -437,15 +381,12 @@ void Camera::setTrigMode(TrigMode  mode)
 	  detector->setTriggerMode(lambda::TrigMode::EXT_FRAMES); // External trigger. Each trigger pulse takes one image.
 	  break;
 	case ExtGate:
-	  //detector->setTriggerMode(lambda::TrigMode::EXIT_FRAME_GATED);
 	case ExtStartStop:
 	case ExtTrigReadout:
 	default:
 		THROW_HW_ERROR(Error) << "Cannot change the Trigger Mode of the camera, this mode is not managed !";
 		break;
 	}
-	
-	
 }
 
 //---------------------------------------------------------------------------------------
@@ -462,29 +403,29 @@ void Camera::getTrigMode(TrigMode& mode)
 //! Camera::getEnergyThreshold()
 //! energy threshold in KeV
 //---------------------------------------------------------------------------------------
-void Camera::getEnergyThreshold(double& energy)
+void Camera::getEnergyThreshold(double& energy_threshold)
 {
 	DEB_MEMBER_FUNCT();
 	// up to 8 thresholds can be set, we only use the first one
 	auto thresholds = detector->thresholds();
 	// at cold start we get an empty double vector
 	if (thresholds.size() != 0)
-		energy = thresholds[0];	
+		energy_threshold = thresholds[0];	
 	else
-		energy = -1; 
-	DEB_RETURN() << DEB_VAR1(energy);
+		energy_threshold = -1; 
+	DEB_RETURN() << DEB_VAR1(energy_threshold);
 }
 
 //---------------------------------------------------------------------------------------
 //! Camera::setEnergyThreshold()
 //! energy threshold in KeV
 //---------------------------------------------------------------------------------------
-void Camera::setEnergyThreshold(double energy)
+void Camera::setEnergyThreshold(double energy_threshold)
 {
 	DEB_MEMBER_FUNCT();
-	DEB_TRACE() << "Camera::setEnergyThreshold - " << DEB_VAR1(energy);
-	DEB_PARAM() << DEB_VAR1(energy);
-	detector->setThresholds(std::vector<double>{energy});
+	DEB_TRACE() << "Camera::setEnergyThreshold - " << DEB_VAR1(energy_threshold);
+	DEB_PARAM() << DEB_VAR1(energy_threshold);
+	detector->setThresholds(std::vector<double>{energy_threshold});
 }
 
 //---------------------------------------------------------------------------------------
@@ -501,49 +442,53 @@ void Camera::getTemperature(double &temperature)
 //---------------------------------------------------------------------------------------
 //! Camera::getHumidity()
 //---------------------------------------------------------------------------------------
-void Camera::getHumidity(double &percent)
+void Camera::getHumidity(double &humidity_percent)
 {
 	DEB_MEMBER_FUNCT();
 	auto module_nr = 1;
-	auto hum = detector->humidity(module_nr);
-	percent = hum;
+	humidity_percent = detector->humidity(module_nr);
+	DEB_RETURN() << DEB_VAR1(humidity_percent);
 }
-
 
 //---------------------------------------------------------------------------------------
 //! Camera::getHighVoltage()
 //! high voltage in Volt
 //---------------------------------------------------------------------------------------
-void Camera::getHighVoltage(double& voltage)
+void Camera::getHighVoltage(double& high_voltage)
 {
 	DEB_MEMBER_FUNCT();
 	auto module_nr = 1;
-	auto hv = detector->voltage(module_nr);
-	voltage = hv;
-	DEB_RETURN() << DEB_VAR1(voltage);
+	high_voltage = detector->voltage(module_nr);
+	DEB_RETURN() << DEB_VAR1(high_voltage);
 }
 
 //---------------------------------------------------------------------------------------
 //! Camera::setHighVoltage()
 //! high voltage in Volt
 //---------------------------------------------------------------------------------------
-void Camera::setHighVoltage(double voltage)
+void Camera::setHighVoltage(double high_voltage)
 {
 	DEB_MEMBER_FUNCT();
-	DEB_TRACE() << "Camera::setHighVoltage - " << DEB_VAR1(voltage);
-	DEB_PARAM() << DEB_VAR1(voltage);
+	DEB_PARAM() << DEB_VAR1(high_voltage);
+
 	auto module_nr = 1;
-	detector->setVoltage(module_nr, voltage);
+	detector->setVoltage(module_nr, high_voltage);
 }
-//---------------------------------------------------------------------------------------
-//! Camera::getInternalAcqMode()
-//-----------------------------------------------------
-//
+//----------------------------------------------------
+//! Camera::setImageType()
 //-----------------------------------------------------
 void Camera::setImageType(ImageType type)
 {
 	DEB_MEMBER_FUNCT();
 	DEB_TRACE() << "Camera::setImageType - " << DEB_VAR1(type);
+
+	xsp::lambda::BitDepth depth;
+	if(type == Bpp12)
+		depth = xsp::lambda::BitDepth::DEPTH_12;
+	else if(type == Bpp24)
+		depth = xsp::lambda::BitDepth::DEPTH_24;
+
+	detector->setBitDepth(depth);
 }
 
 //---------------------------------------------------------------------------------------
@@ -552,46 +497,80 @@ void Camera::setImageType(ImageType type)
 void Camera::getImageType(ImageType& type)
 {
 	DEB_MEMBER_FUNCT();
-	int m_nSizeX;
-	int m_nSizeY;
-	int m_nDepth;
-	
-	m_nSizeX = receiver->frameWidth();
-	m_nSizeY = receiver->frameHeight();
-	m_nDepth = receiver->frameDepth();
-	if(m_nDepth == 12)
-	  type = Bpp12; //short
-	else if(m_nDepth == 24)
-	  type = Bpp24; //int
+
+	xsp::lambda::BitDepth depth;
+	depth = detector->bitDepth();
+
+	if(depth == xsp::lambda::BitDepth::DEPTH_12)
+		type = Bpp12;
+	else if(depth == xsp::lambda::BitDepth::DEPTH_24)
+		type = Bpp24;
 	return;
 }
 
-void Camera::getImageSize(Size& size) {
+//---------------------------------------------------------------------------------------
+//! Camera::getImageSize()
+//! get the image size
+//---------------------------------------------------------------------------------------
+void Camera::getImageSize(Size& size) 
+{
 	DEB_MEMBER_FUNCT();
 
 	size = m_size;
 }
 
-HwBufferCtrlObj* Camera::getBufferCtrlObj() {
+//---------------------------------------------------------------------------------------
+//! Camera::getBufferCtrlObj()
+//! get the BufferCtrlObj
+//---------------------------------------------------------------------------------------
+HwBufferCtrlObj* Camera::getBufferCtrlObj() 
+{
     return &m_bufferCtrlObj;
 }
 
-void Camera::getDistortionCorrection(bool &is_on){
+//---------------------------------------------------------------------------------------
+//! Camera::getDistortionCorrection()
+//! get the value of the Distortion Correction
+//---------------------------------------------------------------------------------------
+void Camera::getDistortionCorrection(bool &is_on)
+{
   is_on = detector->interpolationEnabled();
+}
+
+//---------------------------------------------------------------------------------------
+//! Camera::setDistortionCorrection()
+//! Enable/Disable the Distortion Correction
+//---------------------------------------------------------------------------------------
+void Camera::setDistortionCorrection(bool flag)
+{
+  	if (flag)
+		detector->enableInterpolation();
+	else
+		detector->disableInterpolation();
 }
 
 //---------------------------------------------------------------------------------------
 //! Camera::getLibVersion()
 //! Library version
 //---------------------------------------------------------------------------------------
-void Camera::getLibVersion(std::string &libVersion)
+std::string Camera::getLibVersion()
 {
 	DEB_MEMBER_FUNCT();
-	libVersion = xsp::libraryVersion();
+	return xsp::libraryVersion();
 }
 
 //---------------------------------------------------------------------------------------
-//! Camera::hasFeatures()
+//! Camera::getConfigFile()
+//! configuration file
+//---------------------------------------------------------------------------------------
+std::string Camera::getConfigFile()
+{
+	DEB_MEMBER_FUNCT();
+	return m_config_file;
+}
+
+//---------------------------------------------------------------------------------------
+//! Camera::hasFeature()
 //! returns true or false if the feature is present or not in the camera model
 //---------------------------------------------------------------------------------------
 bool Camera::hasFeature(xsp::lambda::Feature feature)

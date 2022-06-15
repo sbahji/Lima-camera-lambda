@@ -2,3 +2,4 @@ build/
 tango/build/
 /target/
 /test/testLima/target/
+/test/test_from_Xspectrum/target/

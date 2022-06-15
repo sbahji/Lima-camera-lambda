@@ -20,7 +20,8 @@ namespace Lambda
 
   typedef unique_ptr<xsp::System> uptr_sys;
   typedef shared_ptr<xsp::lambda::Detector> sptr_det;
-  typedef shared_ptr<xsp::Receiver> sptr_recv;
+  //typedef shared_ptr<xsp::Receiver> sptr_recv;
+  typedef shared_ptr<xsp::PostDecoder> sptr_recv;
   
 //    class Camera
 class LIBLAMBDA_API Camera
@@ -34,10 +35,9 @@ public:
 		Ready, Exposure, Readout, Latency, Fault
 	};
 
-	Camera(std::string& config_path);
+	Camera(std::string& config_file);
 	~Camera();
 	
-	//LambdaInterface *m_objDetSys;
 	uptr_sys libxsp_system;
 	sptr_det detector;
 	sptr_recv receiver;
@@ -56,7 +56,6 @@ public:
 
 	void setNbFrames(int nb_frames);
 	void getNbFrames(int& nb_frames);
-	
 
 	HwBufferCtrlObj* getBufferCtrlObj();
 
@@ -65,24 +64,19 @@ public:
 	void setEnergyThreshold(double energy);	
 	void getTemperature(double &temperature);
 	void getDistortionCorrection(bool &is_on);
+	void setDistortionCorrection(bool flag);
 	void getHumidity(double &percent);
 	bool hasFeature(xsp::lambda::Feature feature);
-	void getLibVersion(std::string &libVersion);
-
 	void getHighVoltage(double &voltage);
 	void setHighVoltage(double voltage);
+	std::string getLibVersion();
+	std::string getConfigFile();
 
-	//-- Synch control object
-
+	//- Sync control object
 	TrigMode m_trigger_mode;
 	void setTrigMode(TrigMode  mode);
 	void getTrigMode(TrigMode& mode);
 
-	//-- Shutter managment : TODO Shutter control object
-	//---------------------------------------------------------------------------------------
-	void setShutterMode(int mode);
-	void getShutterMode(int& mode);
-	
 	void getImageSize(Size& size);	
 	void setImageType(ImageType type);
 	void getImageType(ImageType& type);
@@ -106,7 +100,6 @@ private:
 
 		virtual void start();
 		bool m_force_stop;
-		FrameStatusCode m_shFrameErrorCode;
 
 	protected:
 		virtual void init();
@@ -115,23 +108,20 @@ private:
 		void execStartAcq();
 		void execStopAcq();
 		Camera* m_cam;
-
 	};
 	friend class CameraThread;
 	
 	double m_exposure;
 	int m_nb_frames;
+	std::string m_config_file;
 
-        Size m_size;
-	
-	int *m_frame;
-	short *m_sframe;
+	std::string m_detector_model;
+
+    Size m_size;
 
 	// Buffer control object
 	SoftBufferCtrlObj m_bufferCtrlObj;
 
-	bool m_bBuildInCompressor;
-	
 	/* main acquisition thread*/
 	CameraThread 	m_thread;
 	int 		m_acq_frame_nb;

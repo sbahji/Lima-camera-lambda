@@ -39,7 +39,6 @@ void DetInfoCtrlObj::getDetectorImageSize(Size& size)
 	DEB_MEMBER_FUNCT();
 	// get the max image size of the detector
 	m_cam.getImageSize(size);
-
 }
 
 //-----------------------------------------------------
@@ -85,7 +84,6 @@ void DetInfoCtrlObj::getDetectorType(std::string& type)
 {
 	DEB_MEMBER_FUNCT();
 	type = "Lambda";
-
 }
 
 //-----------------------------------------------------
