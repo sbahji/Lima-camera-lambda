@@ -15,9 +15,6 @@ namespace lima
 {
 namespace Lambda
 {
-  using namespace xsp;
-  using namespace xsp::lambda;
-
   typedef unique_ptr<xsp::System> uptr_sys;
   typedef shared_ptr<xsp::lambda::Detector> sptr_det;
   //typedef shared_ptr<xsp::Receiver> sptr_recv;
@@ -88,15 +85,23 @@ private:
 	public:
 		enum
 		{ // Status
-			Ready = MaxThreadStatus, Exposure, Readout, Latency,
+			Ready = MaxThreadStatus ,
+            Exposure                ,
+            Readout                 ,
+            Latency                 ,
 		};
 
 		enum
 		{ // Cmd
-			StartAcq = MaxThreadCmd, StopAcq,
+			StartAcq = MaxThreadCmd ,
+            StopAcq                 ,
 		};
 
+        // constructor
 		CameraThread(Camera& cam);
+
+        // destructor
+        virtual ~CameraThread();
 
 		virtual void start();
 		bool m_force_stop;
