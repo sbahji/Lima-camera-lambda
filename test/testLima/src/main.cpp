@@ -289,13 +289,13 @@ int main(int argc, char *argv[])
 		switch (bpp)
 		{
 			case 8:
-				//- Set imageType = Bpp16
+				//- Set imageType = Bpp8
 				std::cout << "Set imageType \t= " << bpp << std::endl;
 				hw_det_info->setCurrImageType(lima::Bpp8);
 				break;
 
 			case 12:
-				//- Set imageType = Bpp16
+				//- Set imageType = Bpp12
 				std::cout << "Set imageType \t= " << bpp << std::endl;
 				hw_det_info->setCurrImageType(lima::Bpp12);
 				break;
@@ -306,7 +306,7 @@ int main(int argc, char *argv[])
 				hw_det_info->setCurrImageType(lima::Bpp16);
 				break;
 			case 32:
-				//- Set imageType = Bpp16
+				//- Set imageType = Bpp32
 				std::cout << "Set imageType \t= " << bpp << std::endl;
 				hw_det_info->setCurrImageType(lima::Bpp32);
 				break;
