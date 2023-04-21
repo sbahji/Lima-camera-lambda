@@ -12,7 +12,7 @@ LAMBDA is a next-generation pixel detector for X-rays, based on Medipix3 technol
 
 
 Installation & Module configuration
-````````````````````
+````````````````````````````````````
 
 Follow the generic instructions in :ref:`build_installation`. If using CMake directly, add the following flag:
 
@@ -57,6 +57,26 @@ Optional capabilites
 
 None of the hardware capability like HwRoi, HwBin have been implemented.
 
+Specific control parameters
+.............................
+
+Some specific paramaters are available within the camera hardware interface.
+
+* getTemperature()
+
+* getHumidity()
+
+* set/getEnergyThreshold()
+
+* set/getDistortionCorrection()
+
+* set/getHighVoltage()
+
+* set/getLinearityCorrection()
+
+* set/getSaturationFlag()
+
+* set/getSaturationThreshold()
 
 Configuration
 `````````````
@@ -66,6 +86,37 @@ No Specific hardware configuration are needed. The detector is sold with a contr
 
 How to use
 ````````````
+Here is the list of accessible fonctions to configure and use the Lambda detector:
+
+.. code-block:: cpp
+	
+	void getEnergyThreshold(double &energy);
+	void setEnergyThreshold(double energy);	
+	
+	void getTemperature(double &temperature);
+	
+	void getDistortionCorrection(bool &is_on);
+	void setDistortionCorrection(bool flag);
+	
+	void getHumidity(double &percent);
+	
+	bool hasFeature(xsp::lambda::Feature feature);
+	void getHighVoltage(double &voltage);
+	void setHighVoltage(double voltage);
+	
+	void getImageSize(Size& size);	
+	void setImageType(ImageType type);
+	void getImageType(ImageType& type);
+	
+	void getLinearityCorrection(bool &is_on);
+	void setLinearityCorrection(bool flag);
+	
+	void getSaturationFlag(bool &is_on);
+	void setSaturationFlag(bool flag);
+	
+	void getSaturationThreshold(int &saturation_threshold);
+	void setSaturationThreshold(int saturation_threshold);
+
 This is a python code example for a simple test:
 
 .. code-block:: python
