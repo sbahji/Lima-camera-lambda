@@ -77,6 +77,14 @@ public:
 	void getImageSize(Size& size);	
 	void setImageType(ImageType type);
 	void getImageType(ImageType& type);
+
+	//- decoding settings
+	void getLinearityCorrection(bool &is_on);
+	void setLinearityCorrection(bool flag);
+	void getSaturationFlag(bool &is_on);
+	void setSaturationFlag(bool flag);
+	void getSaturationThreshold(int &saturation_threshold);
+	void setSaturationThreshold(int saturation_threshold);
 	
 private:
 	class CameraThread: public CmdThread

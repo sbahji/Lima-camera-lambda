@@ -605,3 +605,79 @@ bool Camera::hasFeature(xsp::lambda::Feature feature)
     DEB_RETURN() << DEB_VAR1(w_has_feature);
     return w_has_feature;
 }
+
+//---------------------------------------------------------------------------------------
+//! Camera::getLinearityCorrection()
+//! get the value of if countrate correction is enabled
+//---------------------------------------------------------------------------------------
+void Camera::getLinearityCorrection(bool &is_on)
+{
+    is_on = detector->countrateCorrectionEnabled();
+}
+
+//---------------------------------------------------------------------------------------
+//! Camera::setLinearityCorrection()
+//! Enable/Disable the Countrate Correction
+//---------------------------------------------------------------------------------------
+void Camera::setLinearityCorrection(bool flag)
+{
+    if (flag)
+    {
+        detector->enableCountrateCorrection();
+    }
+    else
+    {
+        detector->disableCountrateCorrection();
+    }
+}
+
+//---------------------------------------------------------------------------------------
+//! Camera::getSaturationFlag()
+//! returns whether flagging of saturated pixels is enabled
+//---------------------------------------------------------------------------------------
+void Camera::getSaturationFlag(bool &is_on)
+{
+    is_on = detector->saturationFlagEnabled();
+}
+
+//---------------------------------------------------------------------------------------
+//! Camera::setSaturationFlag()
+//! Enable/Disable the Saturation Flag
+//---------------------------------------------------------------------------------------
+void Camera::setSaturationFlag(bool flag)
+{
+    if (flag)
+    {
+        //If the count is above a saturation threshold 
+        //then the MSB of the unused bits within the frame is set
+        detector->enableSaturationFlag();
+    }
+    else
+    {
+        detector->disableSaturationFlag();
+    }
+}
+
+//----------------------------------------------------------------------------------------------------
+//! Camera::getSaturationThreshold()
+//! get the value of actual saturation threshold in counts/s/pixel of the specified module
+//----------------------------------------------------------------------------------------------------
+void Camera::getSaturationThreshold(int &saturation_threshold)
+{
+    //saturationThreshold(int module_nr)
+    //module_nr: module number
+    saturation_threshold = detector->saturationThreshold(1);
+}
+
+//---------------------------------------------------------------------------------------
+//! Camera::setSaturationThreshold()
+//! sets global saturation threshold in counts/s/pixel
+//---------------------------------------------------------------------------------------
+void Camera::setSaturationThreshold(int saturation_threshold)
+{
+    //setSaturationThreshold(int module_nr, int n)
+    //module_nr: module number
+    //n: saturation threshold in counts/s/px
+    int module_nr = 1;
+    detector->setSaturationThreshold(module_nr, saturation_threshold);
+}
