@@ -675,9 +675,8 @@ void Camera::getSaturationThreshold(int &saturation_threshold)
 //---------------------------------------------------------------------------------------
 void Camera::setSaturationThreshold(int saturation_threshold)
 {
-    //setSaturationThreshold(int module_nr, int n)
-    //module_nr: module number
-    //n: saturation threshold in counts/s/px
-    int module_nr = 1;
-    detector->setSaturationThreshold(module_nr, saturation_threshold);
+    for(int module_nr = 1 ; module_nr <= detector->numberOfModules() ; ++module_nr)
+    {    
+        detector->setSaturationThreshold(module_nr, saturation_threshold);
+    }
 }
