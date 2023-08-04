@@ -33,7 +33,10 @@ Camera::CameraThread::~CameraThread()
 {
     DEB_MEMBER_FUNCT();
     DEB_TRACE() << "The CameraThread thread was terminated.";
-    CmdThread::abort();
+    if (getStatus() != CmdThread::InInit)
+    {
+        CmdThread::abort();  
+    }
 }
 
 //---------------------------------------------------------------------------------------
