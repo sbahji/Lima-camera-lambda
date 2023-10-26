@@ -85,7 +85,9 @@ public:
 	void setSaturationFlag(bool flag);
 	void getSaturationThreshold(int &saturation_threshold);
 	void setSaturationThreshold(int saturation_threshold);
-	
+	void getChargeSumming(bool &is_charge_summing);
+	void setChargeSumming(int is_charge_summing);
+
 private:
 	class CameraThread: public CmdThread
 	{

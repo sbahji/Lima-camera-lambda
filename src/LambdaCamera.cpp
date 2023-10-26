@@ -570,7 +570,7 @@ void Camera::getDistortionCorrection(bool &is_on)
 //---------------------------------------------------------------------------------------
 void Camera::setDistortionCorrection(bool flag)
 {
-      if (flag)
+    if (flag)
         detector->enableInterpolation();
     else
         detector->disableInterpolation();
@@ -681,5 +681,41 @@ void Camera::setSaturationThreshold(int saturation_threshold)
     for(int module_nr = 1 ; module_nr <= detector->numberOfModules() ; ++module_nr)
     {    
         detector->setSaturationThreshold(module_nr, saturation_threshold);
+    }
+}
+
+//---------------------------------------------------------------------------------------
+//! Camera::getChargeSumming()
+//! sets charge summing mode
+//---------------------------------------------------------------------------------------
+void Camera::getChargeSumming(bool &is_charge_summing)
+{
+    DEB_MEMBER_FUNCT();
+
+    if(xsp::lambda::ChargeSumming::ON == detector->chargeSumming())
+    {
+        is_charge_summing = true;
+    }
+    else if(xsp::lambda::ChargeSumming::OFF == detector->chargeSumming())
+    {
+        is_charge_summing = false;
+    }
+
+    DEB_RETURN() << DEB_VAR1(is_charge_summing);
+}
+
+//---------------------------------------------------------------------------------------
+//! Camera::setChargeSumming()
+//! sets charge summing mode
+//---------------------------------------------------------------------------------------
+void Camera::setChargeSumming(int is_charge_summing)
+{
+    if(is_charge_summing)
+    {
+        detector->setChargeSumming(xsp::lambda::ChargeSumming::ON);
+    }
+    else
+    {
+        detector->setChargeSumming(xsp::lambda::ChargeSumming::OFF);
     }
 }
