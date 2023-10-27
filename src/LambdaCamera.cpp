@@ -468,10 +468,10 @@ void Camera::getUpperEnergyThreshold(double& energy_threshold)
 void Camera::setEnergyThresholds(double lower_energy_threshold, double upper_energy_threshold)
 {
     DEB_MEMBER_FUNCT();
-    DEB_TRACE() << "Camera::setEnergyThresholds - Lower " << DEB_VAR1(lower_energy_threshold);
+    DEB_TRACE() << "Camera::setEnergyThresholds - set lowerThreshold " << DEB_VAR1(lower_energy_threshold);
     DEB_PARAM() << DEB_VAR1(lower_energy_threshold);
 
-    DEB_TRACE() << "Camera::setEnergyThresholds - Upper " << DEB_VAR1(upper_energy_threshold);
+    DEB_TRACE() << "Camera::setEnergyThresholds - set upperThreshold " << DEB_VAR1(upper_energy_threshold);
     DEB_PARAM() << DEB_VAR1(upper_energy_threshold);
 
     detector->setThresholds(std::vector<double>{lower_energy_threshold, upper_energy_threshold});
